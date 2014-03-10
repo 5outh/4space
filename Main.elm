@@ -135,25 +135,20 @@ unlines xs = case xs of
   (s::ss) -> String.append (String.append s "\n") (unlines ss) 
 
 showSlice : Vector4 -> (Axis, Axis) -> Board -> [Element]
-showSlice v (a1, a2) b   =
-  let [a1', a2']         = sortWith axisOrder [a1, a2]
-      (mini, maxi)       = b.minmax
-      filterByPosition   = sortBy .pos . filter (inSlice v (a1', a2'))
-      prisms'            = filterByPosition b.prisms
-      receptors'         = filterByPosition b.receptors
-      lasers'            = filterByPosition b.lasers
-      tiles'             = filterByPosition b.tiles
-      getLine  axis x    = filter (\e -> getPosCoordinate axis e == x)
-      getLines axis es   = map (\i -> getLine axis i es) [mini..maxi]
-      getCharLists f     = map (map f)
-      formatSection f xs = getCharLists f <| getLines a2' xs
-      showBoard          = map (text . monospace . toText)
-      allSections        = zipWith4 merge4
-                            (formatSection showPrism    prisms'    )
-                            (formatSection showReceptor receptors' )
-                            (formatSection showLaser    lasers'    ) 
-                            (formatSection showFloor    tiles'     )
-  in showBoard <| map String.fromList <| allSections
+showSlice v (a1, a2) b =
+  let [a1', a2']       = sortWith axisOrder [a1, a2]
+      (mini, maxi)     = b.minmax
+      fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
+      (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
+      getLine  axis x  = filter (\e -> getPosCoordinate axis e == x)
+      getLines axis es = map (\i -> getLine axis i es) [mini..maxi]
+      formatSection f  = (map . map) f . getLines a2'
+      allSections      = zipWith4 merge4
+                          (formatSection showPrism    ps)
+                          (formatSection showReceptor rs)
+                          (formatSection showLaser    ls) 
+                          (formatSection showFloor    ts)
+  in map (text . monospace . toText) <| map String.fromList <| allSections
 
 
 p : Prism
