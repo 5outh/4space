@@ -1,0 +1,256 @@
+Elm.Main = Elm.Main || {};
+Elm.Main.make = function (_elm) {
+   _elm.Main = _elm.Main || {};
+   if (_elm.Main.values)
+   return _elm.Main.values;
+   var _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   _E = _N.Error.make(_elm),
+   _J = _N.JavaScript.make(_elm),
+   $moduleName = "Main";
+   var Basics = Elm.Basics.make(_elm);
+   var Color = Elm.Color.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Element = Elm.Graphics.Element.make(_elm);
+   var List = Elm.List.make(_elm);
+   var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Ports = Elm.Native.Ports.make(_elm);
+   var Prelude = Elm.Prelude.make(_elm);
+   var Set = Elm.Set.make(_elm);
+   var Signal = Elm.Signal.make(_elm);
+   var String = Elm.String.make(_elm);
+   var Text = Elm.Text.make(_elm);
+   var Time = Elm.Time.make(_elm);
+   var _op = {};
+   var showPlayer = Basics.always(_U.chr("@"));
+   var merge = List.zipWith(F2(function (x,
+   y) {
+      return _U.eq(x,
+      _U.chr(" ")) ? y : x;
+   }));
+   var setSwitch = F2(function (b,
+   s) {
+      return _U.replace([["$switch"
+                         ,b]],
+      s);
+   });
+   var PlayerMove = function (a) {
+      return {ctor: "PlayerMove"
+             ,_0: a};
+   };
+   var SwitchPrism = F2(function (a,
+   b) {
+      return {ctor: "SwitchPrism"
+             ,_0: a
+             ,_1: b};
+   });
+   var SwitchReceptor = F2(function (a,
+   b) {
+      return {ctor: "SwitchReceptor"
+             ,_0: a
+             ,_1: b};
+   });
+   var SwitchLaser = F3(function (a,
+   b,
+   c) {
+      return {ctor: "SwitchLaser"
+             ,_0: a
+             ,_1: b
+             ,_2: c};
+   });
+   var Game = F3(function (a,b,c) {
+      return {_: {}
+             ,board: b
+             ,plr: a
+             ,won: c};
+   });
+   var Board = F4(function (a,
+   b,
+   c,
+   d) {
+      return {_: {}
+             ,lasers: c
+             ,prisms: a
+             ,receptors: b
+             ,tile: d};
+   });
+   var Switchable = F2(function (a,
+   b) {
+      return _U.insert("$switch",
+      a,
+      b);
+   });
+   var Positioned = F2(function (a,
+   b) {
+      return _U.insert("pos",a,b);
+   });
+   var Off = {ctor: "Off"};
+   var p = {_: {}
+           ,$switch: Off
+           ,pos: {ctor: "_Tuple4"
+                 ,_0: 1
+                 ,_1: 0
+                 ,_2: 1
+                 ,_3: 0}};
+   var r = {_: {}
+           ,$switch: Off
+           ,pos: {ctor: "_Tuple4"
+                 ,_0: 0
+                 ,_1: 0
+                 ,_2: 0
+                 ,_3: 0}};
+   var On = {ctor: "On"};
+   var showPrism = function (_v0) {
+      return function () {
+         return function () {
+            var _v2 = _v0.$switch;
+            switch (_v2.ctor)
+            {case "Off": return _U.chr("*");
+               case "On": return _U.chr("%");}
+            _E.Case($moduleName,
+            "between lines 59 and 61");
+         }();
+      }();
+   };
+   var showReceptor = function (_v3) {
+      return function () {
+         return function () {
+            var _v5 = _v3.$switch;
+            switch (_v5.ctor)
+            {case "Off": return _U.chr("_");
+               case "On": return _U.chr("$");}
+            _E.Case($moduleName,
+            "between lines 64 and 66");
+         }();
+      }();
+   };
+   var W = {ctor: "W"};
+   var Z = {ctor: "Z"};
+   var Y = {ctor: "Y"};
+   var X = {ctor: "X"};
+   var mapCoordinate = F3(function (a,
+   f,
+   _v6) {
+      return function () {
+         switch (_v6.ctor)
+         {case "_Tuple4":
+            return function () {
+                 switch (a.ctor)
+                 {case "W":
+                    return {ctor: "_Tuple4"
+                           ,_0: _v6._0
+                           ,_1: _v6._1
+                           ,_2: _v6._2
+                           ,_3: f(_v6._3)};
+                    case "X":
+                    return {ctor: "_Tuple4"
+                           ,_0: f(_v6._0)
+                           ,_1: _v6._1
+                           ,_2: _v6._2
+                           ,_3: _v6._3};
+                    case "Y":
+                    return {ctor: "_Tuple4"
+                           ,_0: _v6._0
+                           ,_1: f(_v6._1)
+                           ,_2: _v6._2
+                           ,_3: _v6._3};
+                    case "Z":
+                    return {ctor: "_Tuple4"
+                           ,_0: _v6._0
+                           ,_1: _v6._1
+                           ,_2: f(_v6._2)
+                           ,_3: _v6._3};}
+                 _E.Case($moduleName,
+                 "between lines 39 and 43");
+              }();}
+         _E.Case($moduleName,
+         "between lines 39 and 43");
+      }();
+   });
+   var setCoordinate = F2(function (a,
+   i) {
+      return A2(mapCoordinate,
+      a,
+      Basics.always(i));
+   });
+   var mapPosCoordinate = F3(function (a,
+   f,
+   p) {
+      return function () {
+         var pos$ = p.pos;
+         return _U.replace([["pos"
+                            ,A3(mapCoordinate,a,f,pos$)]],
+         p);
+      }();
+   });
+   var setPosCoordinate = F2(function (a,
+   i) {
+      return A2(mapPosCoordinate,
+      a,
+      Basics.always(i));
+   });
+   var main = Graphics.Element.flow(Graphics.Element.down)(A2(List.map,
+   function ($) {
+      return Text.asText(A2(mapPosCoordinate,
+      W,
+      F2(function (x,y) {
+         return x + y;
+      })(1))($));
+   },
+   _J.toList([p
+             ,A2(setSwitch,On,p)])));
+   var showLaser = function (_v13) {
+      return function () {
+         return function () {
+            var _v15 = _v13.$switch;
+            switch (_v15.ctor)
+            {case "Off": return _U.chr("?");
+               case "On": return function () {
+                    var _v16 = _v13.dir;
+                    switch (_v16.ctor)
+                    {case "W": return _U.chr(";");
+                       case "X": return _U.chr(":");
+                       case "Y": return _U.chr("=");
+                       case "Z": return _U.chr(".");}
+                    _E.Case($moduleName,
+                    "between lines 71 and 76");
+                 }();}
+            _E.Case($moduleName,
+            "between lines 70 and 76");
+         }();
+      }();
+   };
+   _elm.Main.values = {_op: _op
+                      ,setSwitch: setSwitch
+                      ,mapCoordinate: mapCoordinate
+                      ,setCoordinate: setCoordinate
+                      ,mapPosCoordinate: mapPosCoordinate
+                      ,setPosCoordinate: setPosCoordinate
+                      ,merge: merge
+                      ,showPrism: showPrism
+                      ,showReceptor: showReceptor
+                      ,showLaser: showLaser
+                      ,showPlayer: showPlayer
+                      ,p: p
+                      ,r: r
+                      ,main: main
+                      ,X: X
+                      ,Y: Y
+                      ,Z: Z
+                      ,W: W
+                      ,On: On
+                      ,Off: Off
+                      ,SwitchLaser: SwitchLaser
+                      ,SwitchReceptor: SwitchReceptor
+                      ,SwitchPrism: SwitchPrism
+                      ,PlayerMove: PlayerMove
+                      ,Positioned: Positioned
+                      ,Switchable: Switchable
+                      ,Board: Board
+                      ,Game: Game};
+   return _elm.Main.values;
+};
