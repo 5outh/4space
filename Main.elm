@@ -90,6 +90,110 @@ merge4 = zipWith4 <|
                []    -> ' '
                (c::_) -> c 
 
+inSlice : Vector4 -> (Axis, Axis) -> Positioned a -> Bool
+inSlice v (a1, a2) p = 
+     getCoordinate a1 v == getPosCoordinate a1 p
+  && getCoordinate a2 v == getPosCoordinate a2 p
+
+unlines : [String] -> String
+unlines xs = case xs of
+  []      -> ""
+  (s::ss) -> String.append (String.append s "\n") (unlines ss) 
+
+notAxes : (Axis, Axis) -> [Axis]
+notAxes (a, b) = filter (\x -> x /= a && x /= b) [X,Y,Z,W]
+
+-- iterate some function over a range of values on a single axis
+-- "if something exists at the location in question, return it,
+--  otherwise, return Nothing and continue on."
+--iterAxis : Axis
+--        -> [Int] 
+--        -> (Positioned a -> b) 
+--        -> [Positioned a] 
+--        -> [Maybe b]
+iterAxis axis is f ps  = case is of
+  (x::xs) -> 
+    case filter (\p -> (getPosCoordinate axis p) == x) ps of
+      (z::_) -> ( axis, x, Just (f z) ) :: iterAxis axis xs f ps
+      []     -> ( axis, x, Nothing )    :: iterAxis axis xs f ps
+  []      -> []
+
+iterAxes (a1, a2) is f ps = case is of
+  ((a, b)::xs) -> 
+    case filter (\p -> getPosCoordinate a1 p == a && getPosCoordinate a2 p == b) ps of
+      (z::_) -> ( (a1, a2), (a, b), Just (f z) ) :: iterAxes (a1, a2) xs f ps
+      []     -> ( (a1, a2), (a, b), Nothing    ) :: iterAxes (a1, a2) xs f ps
+  []      -> []
+
+-- showSlice : Vector4 -> (Axis, Axis) -> Board -> Element
+showSlice v (a1, a2) b =
+  let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
+      (mini, maxi)     = b.minmax
+      fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
+      (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
+      getLine  axis x  = filter (\e -> getPosCoordinate axis e == x)
+      getLines axis es = map (\i -> getLine axis i es) [mini..maxi]
+      formatSection f  = (map . map) f . getLines a2'
+      allSections      = zipWith4 merge4
+                          (formatSection showPrism    ps)
+                          (formatSection showReceptor rs)
+                          (formatSection showLaser    ls) 
+                          (formatSection showFloor    ts)
+      axes = [ String.fromList <| map showAxis [a1, a2] ]
+  in [ iterAxes 
+        (a1, a2) 
+        ([mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> [(x, y)] )
+        showLaser
+        ls ]
+
+-- (text . monospace . toText) <| unlines <| 
+
+lbind = flip concatMap
+
+main = flow down 
+    <| map asText 
+    <| coordinates `lbind` \x ->
+       planes      `lbind` \p ->
+       showSlice x p testBoard 
+
+-- 2 x 2 x 2 x 2 = 16 entities
+{- Begin Debug -}
+testBoard =
+  let ps = [ ]
+      rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
+      ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
+      ts = [ ]
+      mm = (0, 1)
+  in Board ps rs ls ts mm
+
+coordinates = 
+  [ (0, 0, 0, 0)
+  , (0, 0, 0, 1)
+  , (0, 0, 1, 0)
+  , (0, 0, 1, 1)
+  , (0, 1, 0, 0)
+  , (0, 1, 1, 1)
+  , (0, 1, 1, 0)
+  , (0, 1, 0, 1)
+  , (1, 0, 0, 0)
+  , (1, 0, 1, 1)
+  , (1, 0, 1, 0)
+  , (1, 0, 0, 1)
+  , (1, 1, 0, 0)
+  , (1, 1, 1, 1)
+  , (1, 1, 1, 0)
+  , (1, 1, 0, 1) ]
+
+planes = 
+  [ (X, Y)
+  , (X, Z)
+  , (X, W)
+  , (Y, Z)
+  , (Y, W)
+  , (Z, W) ]
+
+{- End Debug -}
+
 showPrism : Prism -> Char
 showPrism {switch} = case switch of
   On  -> '%'
@@ -123,84 +227,3 @@ showAxis a = case a of
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Char
 showFloor = always ' '
-
-inSlice : Vector4 -> (Axis, Axis) -> Positioned a -> Bool
-inSlice v (a1, a2) p = 
-     getCoordinate a1 v == getPosCoordinate a1 p
-  && getCoordinate a2 v == getPosCoordinate a2 p
-
-unlines : [String] -> String
-unlines xs = case xs of
-  []      -> ""
-  (s::ss) -> String.append (String.append s "\n") (unlines ss) 
-
-notAxes : (Axis, Axis) -> [Axis]
-notAxes (a, b) = filter (\x -> x /= a && x /= b) [X,Y,Z,W]
-
--- showSlice : Vector4 -> (Axis, Axis) -> Board -> Element
-showSlice v (a1, a2) b =
-  let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
-      (mini, maxi)     = b.minmax
-      fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
-      (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
-      getLine  axis x  = filter (\e -> getPosCoordinate axis e == x)
-      getLines axis es = map (\i -> getLine axis i es) [mini..maxi]
-      formatSection f  = (map . map) f . getLines a2'
-      allSections      = zipWith4 merge4
-                          (formatSection showPrism    ps)
-                          (formatSection showReceptor rs)
-                          (formatSection showLaser    ls) 
-                          (formatSection showFloor    ts)
-      axes = [ String.fromList <| map showAxis [a1', a2'] ]
-  in zip axes (map showLaser ls)
-
--- (text . monospace . toText) <| unlines <| 
-
-p : Prism
-p = { switch = Off, pos = (1, 0, 1, 0) }
-
-r : Receptor
-r = { switch = Off, pos = (0, 0, 0, 0) }
-
-coordinates = 
-  [ (0, 0, 0, 0)
-  , (0, 0, 0, 1)
-  , (0, 0, 1, 0)
-  , (0, 0, 1, 1)
-  , (0, 1, 0, 0)
-  , (0, 1, 1, 1)
-  , (0, 1, 1, 0)
-  , (0, 1, 0, 1)
-  , (1, 0, 0, 0)
-  , (1, 0, 1, 1)
-  , (1, 0, 1, 0)
-  , (1, 0, 0, 1)
-  , (1, 1, 0, 0)
-  , (1, 1, 1, 1)
-  , (1, 1, 1, 0)
-  , (1, 1, 0, 1) ]
-
-planes = 
-  [ (X, Y)
-  , (X, Z)
-  , (X, W)
-  , (Y, Z)
-  , (Y, W)
-  , (Z, W) ]
-
-lbind = flip concatMap
-
-main = flow down 
-    <| map asText 
-    <| coordinates `lbind` \x ->
-       planes      `lbind` \p ->
-       showSlice x p testBoard 
-
--- 2 x 2 x 2 x 2 = 16 entities
-testBoard =
-  let ps = [ ]
-      rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
-      ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
-      ts = [ ]
-      mm = (0, 1)
-  in Board ps rs ls ts mm
