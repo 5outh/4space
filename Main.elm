@@ -134,9 +134,12 @@ unlines xs = case xs of
   []      -> ""
   (s::ss) -> String.append (String.append s "\n") (unlines ss) 
 
-showSlice : Vector4 -> (Axis, Axis) -> Board -> [Element]
+notAxes : (Axis, Axis) -> [Axis]
+notAxes (a, b) = filter (\x -> x /= a && x /= b) [X,Y,Z,W]
+
+-- showSlice : Vector4 -> (Axis, Axis) -> Board -> Element
 showSlice v (a1, a2) b =
-  let [a1', a2']       = sortWith axisOrder [a1, a2]
+  let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
       (mini, maxi)     = b.minmax
       fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
       (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
@@ -148,8 +151,10 @@ showSlice v (a1, a2) b =
                           (formatSection showReceptor rs)
                           (formatSection showLaser    ls) 
                           (formatSection showFloor    ts)
-  in map (text . monospace . toText) <| map String.fromList <| allSections
+      axes = [ String.fromList <| map showAxis [a1', a2'] ]
+  in zip axes (map showLaser ls)
 
+-- (text . monospace . toText) <| unlines <| 
 
 p : Prism
 p = { switch = Off, pos = (1, 0, 1, 0) }
@@ -157,4 +162,45 @@ p = { switch = Off, pos = (1, 0, 1, 0) }
 r : Receptor
 r = { switch = Off, pos = (0, 0, 0, 0) }
 
-main = asText <| merge4 [' '] ['$'] [' '] [' ']
+coordinates = 
+  [ (0, 0, 0, 0)
+  , (0, 0, 0, 1)
+  , (0, 0, 1, 0)
+  , (0, 0, 1, 1)
+  , (0, 1, 0, 0)
+  , (0, 1, 1, 1)
+  , (0, 1, 1, 0)
+  , (0, 1, 0, 1)
+  , (1, 0, 0, 0)
+  , (1, 0, 1, 1)
+  , (1, 0, 1, 0)
+  , (1, 0, 0, 1)
+  , (1, 1, 0, 0)
+  , (1, 1, 1, 1)
+  , (1, 1, 1, 0)
+  , (1, 1, 0, 1) ]
+
+planes = 
+  [ (X, Y)
+  , (X, Z)
+  , (X, W)
+  , (Y, Z)
+  , (Y, W)
+  , (Z, W) ]
+
+lbind = flip concatMap
+
+main = flow down 
+    <| map asText 
+    <| coordinates `lbind` \x ->
+       planes      `lbind` \p ->
+       showSlice x p testBoard 
+
+-- 2 x 2 x 2 x 2 = 16 entities
+testBoard =
+  let ps = [ ]
+      rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
+      ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
+      ts = [ ]
+      mm = (0, 1)
+  in Board ps rs ls ts mm

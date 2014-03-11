@@ -26,6 +26,87 @@ Elm.Main.make = function (_elm) {
    var Text = Elm.Text.make(_elm);
    var Time = Elm.Time.make(_elm);
    var _op = {};
+   var lbind = Basics.flip(List.concatMap);
+   var coordinates = _J.toList([{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 0
+                                ,_2: 0
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 0
+                                ,_2: 0
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 0
+                                ,_2: 1
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 0
+                                ,_2: 1
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 1
+                                ,_2: 1
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 1
+                                ,_2: 1
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 0
+                                ,_2: 0
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 0
+                                ,_2: 1
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 0
+                                ,_2: 1
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 0
+                                ,_2: 0
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 1
+                                ,_2: 1
+                                ,_3: 1}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 1
+                                ,_2: 1
+                                ,_3: 0}
+                               ,{ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 1}]);
    var unlines = function (xs) {
       return function () {
          switch (xs.ctor)
@@ -77,11 +158,6 @@ Elm.Main.make = function (_elm) {
          }();
       }();
    }));
-   var main = Text.asText(A4(merge4,
-   _J.toList([_U.chr(" ")]),
-   _J.toList([_U.chr("$")]),
-   _J.toList([_U.chr(" ")]),
-   _J.toList([_U.chr(" ")])));
    var merge = List.zipWith(F2(function (x,
    y) {
       return _U.eq(x,
@@ -350,11 +426,36 @@ Elm.Main.make = function (_elm) {
          }();
       }();
    };
+   var showAxis = function (a) {
+      return function () {
+         switch (a.ctor)
+         {case "W": return _U.chr("W");
+            case "X": return _U.chr("X");
+            case "Y": return _U.chr("Y");
+            case "Z": return _U.chr("Z");}
+         _E.Case($moduleName,
+         "between lines 117 and 121");
+      }();
+   };
+   var notAxes = function (_v43) {
+      return function () {
+         switch (_v43.ctor)
+         {case "_Tuple2":
+            return A2(List.filter,
+              function (x) {
+                 return !_U.eq(x,
+                 _v43._0) && !_U.eq(x,_v43._1);
+              },
+              _J.toList([X,Y,Z,W]));}
+         _E.Case($moduleName,
+         "on line 138, column 18 to 59");
+      }();
+   };
    var showSlice = F3(function (v,
-   _v42,
+   _v47,
    b) {
       return function () {
-         switch (_v42.ctor)
+         switch (_v47.ctor)
          {case "_Tuple2":
             return function () {
                  var getLine = F2(function (axis,
@@ -377,9 +478,9 @@ Elm.Main.make = function (_elm) {
                     },
                     _L.range(mini,maxi));
                  });
-                 var $ = A2(List.sortWith,
-                 axisOrder,
-                 _J.toList([_v42._0,_v42._1]));
+                 var $ = List.sortWith(axisOrder)(notAxes({ctor: "_Tuple2"
+                                                          ,_0: _v47._0
+                                                          ,_1: _v47._1}));
                  var a1$ = function () {
                     switch ($.ctor)
                     {case "::": switch ($._1.ctor)
@@ -389,7 +490,7 @@ Elm.Main.make = function (_elm) {
                               break;}
                          break;}
                     _E.Case($moduleName,
-                    "on line 139, column 26 to 53");
+                    "on line 142, column 26 to 63");
                  }();
                  var a2$ = function () {
                     switch ($.ctor)
@@ -400,7 +501,7 @@ Elm.Main.make = function (_elm) {
                               break;}
                          break;}
                     _E.Case($moduleName,
-                    "on line 139, column 26 to 53");
+                    "on line 142, column 26 to 63");
                  }();
                  var fbP = function ($) {
                     return List.sortBy(function (_) {
@@ -435,25 +536,62 @@ Elm.Main.make = function (_elm) {
                  rs),
                  A2(formatSection,showLaser,ls),
                  A2(formatSection,showFloor,ts));
-                 return List.map(function ($) {
-                    return Text.text(Text.monospace(Text.toText($)));
-                 })(List.map(String.fromList)(allSections));
+                 var axes = _J.toList([String.fromList(A2(List.map,
+                 showAxis,
+                 _J.toList([a1$,a2$])))]);
+                 return A2(List.zip,
+                 axes,
+                 A2(List.map,showLaser,ls));
               }();}
          _E.Case($moduleName,
-         "between lines 139 and 151");
+         "between lines 142 and 155");
       }();
    });
-   var showAxis = function (a) {
-      return function () {
-         switch (a.ctor)
-         {case "W": return _U.chr("W");
-            case "X": return _U.chr("X");
-            case "Y": return _U.chr("Y");
-            case "Z": return _U.chr("Z");}
-         _E.Case($moduleName,
-         "between lines 117 and 121");
-      }();
-   };
+   var planes = _J.toList([{ctor: "_Tuple2"
+                           ,_0: X
+                           ,_1: Y}
+                          ,{ctor: "_Tuple2",_0: X,_1: Z}
+                          ,{ctor: "_Tuple2",_0: X,_1: W}
+                          ,{ctor: "_Tuple2",_0: Y,_1: Z}
+                          ,{ctor: "_Tuple2",_0: Y,_1: W}
+                          ,{ctor: "_Tuple2"
+                           ,_0: Z
+                           ,_1: W}]);
+   var testBoard = function () {
+      var mm = {ctor: "_Tuple2"
+               ,_0: 0
+               ,_1: 1};
+      var ts = _J.toList([]);
+      var ls = _J.toList([{_: {}
+                          ,$switch: Off
+                          ,dir: X
+                          ,pos: {ctor: "_Tuple4"
+                                ,_0: 0
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 0}}]);
+      var rs = _J.toList([{_: {}
+                          ,$switch: Off
+                          ,pos: {ctor: "_Tuple4"
+                                ,_0: 1
+                                ,_1: 1
+                                ,_2: 0
+                                ,_3: 0}}]);
+      var ps = _J.toList([]);
+      return A5(Board,ps,rs,ls,ts,mm);
+   }();
+   var main = Graphics.Element.flow(Graphics.Element.down)(List.map(Text.asText)(A2(lbind,
+   coordinates,
+   function (x) {
+      return A2(lbind,
+      planes,
+      function (p) {
+         return A3(showSlice,
+         x,
+         p,
+         testBoard);
+      });
+   })));
    _elm.Main.values = {_op: _op
                       ,axisOrder: axisOrder
                       ,setSwitch: setSwitch
@@ -475,10 +613,15 @@ Elm.Main.make = function (_elm) {
                       ,showFloor: showFloor
                       ,inSlice: inSlice
                       ,unlines: unlines
+                      ,notAxes: notAxes
                       ,showSlice: showSlice
                       ,p: p
                       ,r: r
+                      ,coordinates: coordinates
+                      ,planes: planes
+                      ,lbind: lbind
                       ,main: main
+                      ,testBoard: testBoard
                       ,X: X
                       ,Y: Y
                       ,Z: Z
