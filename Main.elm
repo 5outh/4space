@@ -79,16 +79,29 @@ mergeAll xs = case xs of
   []      -> []
 
 zipWith4 : (a -> b -> c -> d -> e) -> [a] -> [b] -> [c] -> [d] -> [e]
-zipWith4 f xs ys zs ws = 
-  if isEmpty xs || isEmpty ys || isEmpty zs || isEmpty ws then []
-  else f (head xs) (head ys) (head zs) (head ws) :: zipWith4 f (tail xs) (tail ys) (tail zs) (tail ws)
+zipWith4 f ws xs ys zs = 
+  case (ws,xs,ys,zs) of
+    (w::ws, x::xs, y::ys, z::zs) -> f w x y z :: zipWith4 f ws xs ys zs
+    _ -> []
 
 merge4 : [Char] -> [Char] -> [Char] -> [Char] -> [Char]
 merge4 = zipWith4 <| 
   \x y z w -> let cs = filter ((/=) ' ') [x, y, z, w]
               in case cs of 
                []    -> ' '
-               (c::_) -> c 
+               (c::_) -> c
+
+merge4Justs = zipWith4 <|
+  \x y z w -> let cs = filter isJust [x, y, z, w]
+              in case cs of 
+               []    -> Nothing
+               (c::_) -> c
+
+mergeJusts xs ys = case (xs, ys) of
+  ((Just x)::xs',       y ::ys')  -> Just x  :: mergeJusts xs' ys'
+  (Nothing ::xs', (Just y)::ys')  -> Just y  :: mergeJusts xs' ys'
+  (Nothing ::xs', Nothing ::ys' ) -> Nothing :: mergeJusts xs' ys'
+  _                           -> []
 
 inSlice : Vector4 -> (Axis, Axis) -> Positioned a -> Bool
 inSlice v (a1, a2) p = 
@@ -121,43 +134,52 @@ iterAxis axis is f ps  = case is of
 iterAxes (a1, a2) is f ps = case is of
   ((a, b)::xs) -> 
     case filter (\p -> getPosCoordinate a1 p == a && getPosCoordinate a2 p == b) ps of
-      (z::_) -> ( (a1, a2), (a, b), Just (f z) ) :: iterAxes (a1, a2) xs f ps
-      []     -> ( (a1, a2), (a, b), Nothing    ) :: iterAxes (a1, a2) xs f ps
+      (z::_) -> Just (f z) :: iterAxes (a1, a2) xs f ps
+      []     -> Nothing    :: iterAxes (a1, a2) xs f ps
   []      -> []
 
--- showSlice : Vector4 -> (Axis, Axis) -> Board -> Element
+groupOn : Int -> [a] -> [[a]]
+groupOn n list = case list of 
+  [] -> []
+  xs -> take n xs :: groupOn n (drop n xs)
+
+showSlice : Vector4 -> (Axis, Axis) -> Board -> [Element]
 showSlice v (a1, a2) b =
   let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
       (mini, maxi)     = b.minmax
+      len              = maxi - mini + 1
       fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
       (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
-      getLine  axis x  = filter (\e -> getPosCoordinate axis e == x)
-      getLines axis es = map (\i -> getLine axis i es) [mini..maxi]
-      formatSection f  = (map . map) f . getLines a2'
-      allSections      = zipWith4 merge4
-                          (formatSection showPrism    ps)
-                          (formatSection showReceptor rs)
-                          (formatSection showLaser    ls) 
-                          (formatSection showFloor    ts)
-      axes = [ String.fromList <| map showAxis [a1, a2] ]
-  in [ iterAxes 
-        (a1, a2) 
-        ([mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> [(x, y)] )
-        showLaser
-        ls ]
+      getAll f xs = 
+        iterAxes 
+          (a1, a2) 
+          ([mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> [(y, x)] )
+          f
+          xs
+  in map (flow up)
+      [    map ( text . Text.height 40 . monospace . toText . String.fromList ) 
+        <| groupOn len
+        <| map (maybe '·' id) 
+        <| getAll showLaser    ls
+           `mergeJusts` getAll showReceptor rs
+           `mergeJusts` getAll showPrism    ps
+           `mergeJusts` getAll showFloor    ts ]
 
 -- (text . monospace . toText) <| unlines <| 
 
 lbind = flip concatMap
 
-main = flow down 
-    <| map asText 
-    <| coordinates `lbind` \x ->
-       planes      `lbind` \p ->
-       showSlice x p testBoard 
+main = flow down
+      <| intersperse (spacer 20 20)
+      <| coordinates `lbind` \x ->
+         planes      `lbind` \p ->
+         showSlice x p testBoard 
 
--- 2 x 2 x 2 x 2 = 16 entities
 {- Begin Debug -}
+-- 2 x 2 x 2 x 2 = 16 entities
+-- on slice (x, y, 0, 0), this should look like:
+-- ?_
+-- 
 testBoard =
   let ps = [ ]
       rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
