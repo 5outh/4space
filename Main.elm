@@ -33,6 +33,18 @@ data Event = SwitchLaser    Switch Vector4 Axis
 
 type EventSignal = Signal Event
 
+handleEvent : Event -> Game -> Game
+handleEvent e = case e of
+  SwitchLaser    s v a -> switchLaser s v a
+  SwitchPrism    s v   -> switchPrism s v
+  SwitchReceptor s v   -> switchReceptor s v
+  PlayerMove       v   -> movePlayer v
+
+switchLaser    s v a g = g
+switchReceptor s v   g = g
+switchPrism    s v   g = g
+movePlayer       v   g = g
+
 --NB. Doesn't handle EQ.
 axisOrder : Axis -> Axis -> Order
 axisOrder a b = case (a, b) of
@@ -134,11 +146,6 @@ showSlice p (a1, a2) b =
 lreturn x = [x]
 lbind = flip concatMap
 
-main = lift2 center Window.dimensions (constant <| showGame testGame)
-
-center : (Int, Int) -> Element -> Element
-center (w, h) e = container w h middle e
-
 showGame : Game -> Element
 showGame game = flow down 
         <| intersperse (spacer 30 30)
@@ -179,6 +186,7 @@ planes =
   , (Z, W) ]
 
 {- End Debug -}
+
 {- Begin Show -}
 showPrism : Prism -> Element
 showPrism {switch} = colorChrElem green <| case switch of
@@ -205,10 +213,10 @@ showPlayer = always <| colorChrElem darkOrange '@'
 
 showAxis : Axis -> Element
 showAxis a =  case a of
-  X -> colorSizeChrElem lightGreen  25 'X'
-  Y -> colorSizeChrElem lightBlue   25 'Y'
-  Z -> colorSizeChrElem lightRed    25 'Z'
-  W -> colorSizeChrElem lightPurple 25 'W'
+  X -> colorSizeChrElem green  25 'X'
+  Y -> colorSizeChrElem blue   25 'Y'
+  Z -> colorSizeChrElem red    25 'Z'
+  W -> colorSizeChrElem purple 25 'W'
 
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
@@ -234,4 +242,15 @@ colorSizeChrElem c h =
   . Text.height h 
   . toText 
   . str
+
+center : (Int, Int) -> Element -> Element
+center (w, h) e = container w h middle e
+
+centeredWithBg : (Int, Int) -> Element -> Element
+centeredWithBg (w, h) e = color darkCharcoal <| container w h middle e
+
 {- End Helpers -}
+
+{- Main -}
+
+main = lift2 centeredWithBg Window.dimensions (constant <| showGame testGame )
