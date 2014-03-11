@@ -1,0 +1,103 @@
+<!DOCTYPE HTML>
+<html><head><meta charset="UTF-8"><title>Types</title><script type="text/javascript" src="/home/south/.cabal/share/Elm-0.11/elm-runtime.js"></script><script type="text/javascript">Elm.Types = Elm.Types || {};
+Elm.Types.make = function (_elm) {
+   _elm.Types = _elm.Types || {};
+   if (_elm.Types.values)
+   return _elm.Types.values;
+   var _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   _E = _N.Error.make(_elm),
+   _J = _N.JavaScript.make(_elm),
+   $moduleName = "Types";
+   var Basics = Elm.Basics.make(_elm);
+   var Color = Elm.Color.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Collage = Elm.Graphics.Collage.make(_elm);
+   var Graphics = Graphics || {};
+   Graphics.Element = Elm.Graphics.Element.make(_elm);
+   var List = Elm.List.make(_elm);
+   var Maybe = Elm.Maybe.make(_elm);
+   var Native = Native || {};
+   Native.Ports = Elm.Native.Ports.make(_elm);
+   var Prelude = Elm.Prelude.make(_elm);
+   var Signal = Elm.Signal.make(_elm);
+   var String = Elm.String.make(_elm);
+   var Text = Elm.Text.make(_elm);
+   var Time = Elm.Time.make(_elm);
+   var _op = {};
+   var PlayerMove = function (a) {
+      return {ctor: "PlayerMove"
+             ,_0: a};
+   };
+   var SwitchPrism = F2(function (a,
+   b) {
+      return {ctor: "SwitchPrism"
+             ,_0: a
+             ,_1: b};
+   });
+   var SwitchReceptor = F2(function (a,
+   b) {
+      return {ctor: "SwitchReceptor"
+             ,_0: a
+             ,_1: b};
+   });
+   var SwitchLaser = F3(function (a,
+   b,
+   c) {
+      return {ctor: "SwitchLaser"
+             ,_0: a
+             ,_1: b
+             ,_2: c};
+   });
+   var Game = F3(function (a,b,c) {
+      return {_: {}
+             ,board: b
+             ,plr: a
+             ,won: c};
+   });
+   var Board = F5(function (a,
+   b,
+   c,
+   d,
+   e) {
+      return {_: {}
+             ,lasers: c
+             ,minmax: e
+             ,prisms: a
+             ,receptors: b
+             ,tiles: d};
+   });
+   var Switchable = F2(function (a,
+   b) {
+      return _U.insert("$switch",
+      a,
+      b);
+   });
+   var Positioned = F2(function (a,
+   b) {
+      return _U.insert("pos",a,b);
+   });
+   var Off = {ctor: "Off"};
+   var On = {ctor: "On"};
+   var W = {ctor: "W"};
+   var Z = {ctor: "Z"};
+   var Y = {ctor: "Y"};
+   var X = {ctor: "X"};
+   _elm.Types.values = {_op: _op
+                       ,X: X
+                       ,Y: Y
+                       ,Z: Z
+                       ,W: W
+                       ,On: On
+                       ,Off: Off
+                       ,SwitchLaser: SwitchLaser
+                       ,SwitchReceptor: SwitchReceptor
+                       ,SwitchPrism: SwitchPrism
+                       ,PlayerMove: PlayerMove
+                       ,Positioned: Positioned
+                       ,Switchable: Switchable
+                       ,Board: Board
+                       ,Game: Game};
+   return _elm.Types.values;
+};</script></head><body><script type="text/javascript">Elm.fullscreen(Elm.Types)</script><noscript></noscript></body></html>

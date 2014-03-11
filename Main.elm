@@ -1,4 +1,5 @@
 import open Maybe
+import Window
 import JavaScript
 
 type Vector4  = (Int, Int, Int, Int)
@@ -70,32 +71,11 @@ setPosCoordinate a i = mapPosCoordinate a (always i)
 getPosCoordinate : Axis -> Positioned a -> Int
 getPosCoordinate a {pos} = getCoordinate a pos
 
-merge : [Char] -> [Char] -> [Char]
-merge = zipWith (\x y -> if x == ' ' then y else x)
-
-mergeAll xs = case xs of
-  (z::zs) -> merge z (mergeAll zs)
-  [z]     -> z
-  []      -> []
-
 zipWith4 : (a -> b -> c -> d -> e) -> [a] -> [b] -> [c] -> [d] -> [e]
 zipWith4 f ws xs ys zs = 
   case (ws,xs,ys,zs) of
     (w::ws, x::xs, y::ys, z::zs) -> f w x y z :: zipWith4 f ws xs ys zs
     _ -> []
-
-merge4 : [Char] -> [Char] -> [Char] -> [Char] -> [Char]
-merge4 = zipWith4 <| 
-  \x y z w -> let cs = filter ((/=) ' ') [x, y, z, w]
-              in case cs of 
-               []    -> ' '
-               (c::_) -> c
-
-merge4Justs = zipWith4 <|
-  \x y z w -> let cs = filter isJust [x, y, z, w]
-              in case cs of 
-               []    -> Nothing
-               (c::_) -> c
 
 mergeJusts xs ys = case (xs, ys) of
   ((Just x)::xs',       y ::ys')  -> Just x  :: mergeJusts xs' ys'
@@ -108,28 +88,8 @@ inSlice v (a1, a2) p =
      getCoordinate a1 v == getPosCoordinate a1 p
   && getCoordinate a2 v == getPosCoordinate a2 p
 
-unlines : [String] -> String
-unlines xs = case xs of
-  []      -> ""
-  (s::ss) -> String.append (String.append s "\n") (unlines ss) 
-
 notAxes : (Axis, Axis) -> [Axis]
 notAxes (a, b) = filter (\x -> x /= a && x /= b) [X,Y,Z,W]
-
--- iterate some function over a range of values on a single axis
--- "if something exists at the location in question, return it,
---  otherwise, return Nothing and continue on."
---iterAxis : Axis
---        -> [Int] 
---        -> (Positioned a -> b) 
---        -> [Positioned a] 
---        -> [Maybe b]
-iterAxis axis is f ps  = case is of
-  (x::xs) -> 
-    case filter (\p -> (getPosCoordinate axis p) == x) ps of
-      (z::_) -> ( axis, x, Just (f z) ) :: iterAxis axis xs f ps
-      []     -> ( axis, x, Nothing )    :: iterAxis axis xs f ps
-  []      -> []
 
 iterAxes (a1, a2) is f ps = case is of
   ((a, b)::xs) -> 
@@ -166,7 +126,7 @@ showSlice p (a1, a2) b =
            , getAll showFloor    ts
            , getAll showPlayer   [p] ]
       cr pos e = container size size pos e
-  in layers [ cr middle boardMap
+  in layers [ cr midTop boardMap
             , cr midBottom <| showAxis a1
             , cr midLeft   <| showAxis a2 ]
 
@@ -174,10 +134,14 @@ showSlice p (a1, a2) b =
 lreturn x = [x]
 lbind = flip concatMap
 
-main = showGame testGame
+main = lift2 center Window.dimensions (constant <| showGame testGame)
+
+center : (Int, Int) -> Element -> Element
+center (w, h) e = container w h middle e
 
 showGame : Game -> Element
 showGame game = flow down 
+        <| intersperse (spacer 30 30)
         <| map (flow right)
         <| groupOn 3
         <| planes  `lbind` \p ->
@@ -215,7 +179,7 @@ planes =
   , (Z, W) ]
 
 {- End Debug -}
-
+{- Begin Show -}
 showPrism : Prism -> Element
 showPrism {switch} = colorChrElem green <| case switch of
   On  -> '%'
@@ -249,7 +213,9 @@ showAxis a =  case a of
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
 showFloor = always <| chrElem ' '
+{- End Show -}
 
+{- Begin Helpers -}
 str : Char -> String
 str c = String.cons c ""
 
@@ -260,4 +226,12 @@ colorChrElem : Color -> Char -> Element
 colorChrElem c = colorSizeChrElem c 40
 
 colorSizeChrElem : Color -> Float -> Char -> Element
-colorSizeChrElem c h = (width . JavaScript.toInt <| JavaScript.fromFloat h) . text . Text.color c . monospace . Text.height h . toText . str
+colorSizeChrElem c h = 
+  (width . JavaScript.toInt <| JavaScript.fromFloat h) 
+  . text 
+  . Text.color c 
+  . monospace 
+  . Text.height h 
+  . toText 
+  . str
+{- End Helpers -}
