@@ -1,5 +1,5 @@
-import Set
 import open Maybe
+import JavaScript
 
 type Vector4  = (Int, Int, Int, Int)
 data Axis = X | Y | Z | W
@@ -148,34 +148,40 @@ showSlice p (a1, a2) b =
   let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
       (mini, maxi)     = b.minmax
       len              = maxi - mini + 1
+      size             = len * 40 + 80 -- width and height
       fbP              = sortBy .pos . filter (inSlice p.pos (a1', a2'))
       (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
       getAll f xs = 
-        iterAxes 
-          (a1, a2) 
-          ([mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> [(y, x)] )
-          f
-          xs
-  in flow up
-      <| map (flow right) 
-      <| groupOn len
-      <| map (maybe (chrElem '·') id) 
-      <| foldr1 mergeJusts 
-         [ getAll showLaser    ls
-         , getAll showReceptor rs
-         , getAll showPrism    ps
-         , getAll showFloor    ts
-         , getAll showPlayer   [p] ]
+        let coordPairs = [mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> lreturn (y, x)
+        in iterAxes (a1, a2) coordPairs f xs
+      boardMap = 
+           flow up
+        <| map (flow right) 
+        <| groupOn len
+        <| map (maybe (colorChrElem grey '·') id) 
+        <| foldr1 mergeJusts 
+           [ getAll showLaser    ls
+           , getAll showReceptor rs
+           , getAll showPrism    ps
+           , getAll showFloor    ts
+           , getAll showPlayer   [p] ]
+      cr pos e = container size size pos e
+  in layers [ cr middle boardMap
+            , cr midBottom <| showAxis a1
+            , cr midLeft   <| showAxis a2 ]
 
 -- List monad
 lreturn x = [x]
 lbind = flip concatMap
 
-main = flow down
-      <| intersperse (spacer 20 20)
-      <| coordinates `lbind` \x ->
-         planes      `lbind` \p ->
-         lreturn <| showSlice {pos = x} p testBoard
+main = showGame testGame
+
+showGame : Game -> Element
+showGame game = flow down 
+        <| map (flow right)
+        <| groupOn 3
+        <| planes  `lbind` \p ->
+           lreturn <| showSlice game.plr p game.board
 
 {- Begin Debug -}
 -- 2 x 2 x 2 x 2 = 16 entities
@@ -187,26 +193,18 @@ testBoard =
       rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
-      mm = (0, 1)
+      mm = (0, 4)
   in Board ps rs ls ts mm
 
+testGame = Game {pos = (0,0,0,0)} testBoard False
+
 coordinates = 
-  [ (0, 0, 0, 0)
-  , (0, 0, 0, 1)
-  , (0, 0, 1, 0)
-  , (0, 0, 1, 1)
-  , (0, 1, 0, 0)
-  , (0, 1, 1, 1)
-  , (0, 1, 1, 0)
-  , (0, 1, 0, 1)
-  , (1, 0, 0, 0)
-  , (1, 0, 1, 1)
-  , (1, 0, 1, 0)
-  , (1, 0, 0, 1)
-  , (1, 1, 0, 0)
-  , (1, 1, 1, 1)
-  , (1, 1, 1, 0)
-  , (1, 1, 0, 1) ]
+  let xs = [0, 1] 
+  in  xs `lbind` \x -> 
+      xs `lbind` \y ->
+      xs `lbind` \z ->
+      xs `lbind` \w ->
+      lreturn (x, y, z, w)
 
 planes = 
   [ (X, Y)
@@ -241,12 +239,12 @@ showLaser {dir, switch} = colorChrElem red <| case switch of
 showPlayer : Positioned {} -> Element
 showPlayer = always <| colorChrElem darkOrange '@'
 
-showAxis : Axis -> Char
-showAxis a = case a of
-  X -> 'X'
-  Y -> 'Y'
-  Z -> 'Z'
-  W -> 'W'
+showAxis : Axis -> Element
+showAxis a =  case a of
+  X -> colorSizeChrElem lightGreen  25 'X'
+  Y -> colorSizeChrElem lightBlue   25 'Y'
+  Z -> colorSizeChrElem lightRed    25 'Z'
+  W -> colorSizeChrElem lightPurple 25 'W'
 
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
@@ -256,7 +254,10 @@ str : Char -> String
 str c = String.cons c ""
 
 chrElem : Char -> Element
-chrElem = text . Text.height 40 . monospace . toText . str
+chrElem = colorChrElem black
 
 colorChrElem : Color -> Char -> Element
-colorChrElem c = text . Text.color c . Text.height 40 . monospace . toText . str
+colorChrElem c = colorSizeChrElem c 40
+
+colorSizeChrElem : Color -> Float -> Char -> Element
+colorSizeChrElem c h = (width . JavaScript.toInt <| JavaScript.fromFloat h) . text . Text.color c . monospace . Text.height h . toText . str
