@@ -143,12 +143,12 @@ groupOn n list = case list of
   [] -> []
   xs -> take n xs :: groupOn n (drop n xs)
 
-showSlice : Vector4 -> (Axis, Axis) -> Board -> [Element]
-showSlice v (a1, a2) b =
+showSlice : Positioned {} -> (Axis, Axis) -> Board -> Element
+showSlice p (a1, a2) b =
   let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
       (mini, maxi)     = b.minmax
       len              = maxi - mini + 1
-      fbP              = sortBy .pos . filter (inSlice v (a1', a2'))
+      fbP              = sortBy .pos . filter (inSlice p.pos (a1', a2'))
       (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
       getAll f xs = 
         iterAxes 
@@ -156,24 +156,26 @@ showSlice v (a1, a2) b =
           ([mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> [(y, x)] )
           f
           xs
-  in map (flow up)
-      [    map ( text . Text.height 40 . monospace . toText . String.fromList ) 
-        <| groupOn len
-        <| map (maybe '·' id) 
-        <| getAll showLaser    ls
-           `mergeJusts` getAll showReceptor rs
-           `mergeJusts` getAll showPrism    ps
-           `mergeJusts` getAll showFloor    ts ]
+  in flow up
+      <| map (flow right) 
+      <| groupOn len
+      <| map (maybe (chrElem '·') id) 
+      <| foldr1 mergeJusts 
+         [ getAll showLaser    ls
+         , getAll showReceptor rs
+         , getAll showPrism    ps
+         , getAll showFloor    ts
+         , getAll showPlayer   [p] ]
 
--- (text . monospace . toText) <| unlines <| 
-
+-- List monad
+lreturn x = [x]
 lbind = flip concatMap
 
 main = flow down
       <| intersperse (spacer 20 20)
       <| coordinates `lbind` \x ->
          planes      `lbind` \p ->
-         showSlice x p testBoard 
+         lreturn <| showSlice {pos = x} p testBoard
 
 {- Begin Debug -}
 -- 2 x 2 x 2 x 2 = 16 entities
@@ -216,19 +218,19 @@ planes =
 
 {- End Debug -}
 
-showPrism : Prism -> Char
-showPrism {switch} = case switch of
+showPrism : Prism -> Element
+showPrism {switch} = colorChrElem green <| case switch of
   On  -> '%'
   Off -> '*'
 
-showReceptor : Receptor -> Char
-showReceptor {switch} = case switch of
+showReceptor : Receptor -> Element
+showReceptor {switch} = colorChrElem blue <| case switch of
   On  -> '$'
   Off -> '_'
 
 -- TODO: Test this out and see if it makes sense.
-showLaser : Laser -> Char
-showLaser {dir, switch} = case switch of 
+showLaser : Laser -> Element
+showLaser {dir, switch} = colorChrElem red <| case switch of 
   On ->  case dir of
     X -> ':'
     Y -> '='
@@ -236,8 +238,8 @@ showLaser {dir, switch} = case switch of
     W -> ';'
   Off -> '?'
 
-showPlayer : Positioned {} -> Char
-showPlayer = always '@'
+showPlayer : Positioned {} -> Element
+showPlayer = always <| colorChrElem darkOrange '@'
 
 showAxis : Axis -> Char
 showAxis a = case a of
@@ -247,5 +249,14 @@ showAxis a = case a of
   W -> 'W'
 
 -- TODO: showFloor (will depend on player view)
-showFloor : Floor -> Char
-showFloor = always ' '
+showFloor : Floor -> Element
+showFloor = always <| chrElem ' '
+
+str : Char -> String
+str c = String.cons c ""
+
+chrElem : Char -> Element
+chrElem = text . Text.height 40 . monospace . toText . str
+
+colorChrElem : Color -> Char -> Element
+colorChrElem c = text . Text.color c . Text.height 40 . monospace . toText . str

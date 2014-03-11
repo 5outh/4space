@@ -27,8 +27,21 @@ Elm.Main.make = function (_elm) {
    var Text = Elm.Text.make(_elm);
    var Time = Elm.Time.make(_elm);
    var _op = {};
-   var showFloor = Basics.always(_U.chr(" "));
-   var showPlayer = Basics.always(_U.chr("@"));
+   var str = function (c) {
+      return A2(String.cons,c,"");
+   };
+   var chrElem = function ($) {
+      return Text.text(Text.height(40)(Text.monospace(Text.toText(str($)))));
+   };
+   var colorChrElem = function (c) {
+      return function ($) {
+         return Text.text(Text.color(c)(Text.height(40)(Text.monospace(Text.toText(str($))))));
+      };
+   };
+   var showFloor = Basics.always(chrElem(_U.chr(" ")));
+   var showPlayer = Basics.always(A2(colorChrElem,
+   Color.darkOrange,
+   _U.chr("@")));
    var coordinates = _J.toList([{ctor: "_Tuple4"
                                 ,_0: 0
                                 ,_1: 0
@@ -110,6 +123,9 @@ Elm.Main.make = function (_elm) {
                                 ,_2: 0
                                 ,_3: 1}]);
    var lbind = Basics.flip(List.concatMap);
+   var lreturn = function (x) {
+      return _J.toList([x]);
+   };
    var groupOn = F2(function (n,
    list) {
       return function () {
@@ -331,26 +347,26 @@ Elm.Main.make = function (_elm) {
    var On = {ctor: "On"};
    var showPrism = function (_v37) {
       return function () {
-         return function () {
+         return colorChrElem(Color.green)(function () {
             var _v39 = _v37.$switch;
             switch (_v39.ctor)
             {case "Off": return _U.chr("*");
                case "On": return _U.chr("%");}
             _E.Case($moduleName,
-            "between lines 220 and 222");
-         }();
+            "between lines 222 and 224");
+         }());
       }();
    };
    var showReceptor = function (_v40) {
       return function () {
-         return function () {
+         return colorChrElem(Color.blue)(function () {
             var _v42 = _v40.$switch;
             switch (_v42.ctor)
             {case "Off": return _U.chr("_");
                case "On": return _U.chr("$");}
             _E.Case($moduleName,
-            "between lines 225 and 227");
-         }();
+            "between lines 227 and 229");
+         }());
       }();
    };
    var W = {ctor: "W"};
@@ -634,7 +650,7 @@ Elm.Main.make = function (_elm) {
                            ,_1: W}]);
    var showLaser = function (_v88) {
       return function () {
-         return function () {
+         return colorChrElem(Color.red)(function () {
             var _v90 = _v88.$switch;
             switch (_v90.ctor)
             {case "Off": return _U.chr("?");
@@ -646,14 +662,14 @@ Elm.Main.make = function (_elm) {
                        case "Y": return _U.chr("=");
                        case "Z": return _U.chr(".");}
                     _E.Case($moduleName,
-                    "between lines 232 and 237");
+                    "between lines 234 and 239");
                  }();}
             _E.Case($moduleName,
-            "between lines 231 and 237");
-         }();
+            "between lines 233 and 239");
+         }());
       }();
    };
-   var showSlice = F3(function (v,
+   var showSlice = F3(function (p,
    _v92,
    b) {
       return function () {
@@ -713,7 +729,7 @@ Elm.Main.make = function (_elm) {
                     return List.sortBy(function (_) {
                        return _.pos;
                     })(List.filter(A2(inSlice,
-                    v,
+                    p.pos,
                     {ctor: "_Tuple2"
                     ,_0: a1$
                     ,_1: a2$}))($));
@@ -727,22 +743,22 @@ Elm.Main.make = function (_elm) {
                  rs = $._1,
                  ls = $._2,
                  ts = $._3;
-                 return A2(List.map,
-                 Graphics.Element.flow(Graphics.Element.up),
-                 _J.toList([List.map(function ($) {
-                    return Text.text(Text.height(40)(Text.monospace(Text.toText(String.fromList($)))));
-                 })(groupOn(len)(List.map(A2(Maybe.maybe,
-                 _U.chr("·"),
-                 Basics.id))(A2(mergeJusts,
-                 A2(mergeJusts,
-                 A2(mergeJusts,
-                 A2(getAll,showLaser,ls),
-                 A2(getAll,showReceptor,rs)),
-                 A2(getAll,showPrism,ps)),
-                 A2(getAll,showFloor,ts)))))]));
+                 return Graphics.Element.flow(Graphics.Element.up)(List.map(Graphics.Element.flow(Graphics.Element.right))(groupOn(len)(List.map(A2(Maybe.maybe,
+                 chrElem(_U.chr("·")),
+                 Basics.id))(A2(List.foldr1,
+                 mergeJusts,
+                 _J.toList([A2(getAll,
+                           showLaser,
+                           ls)
+                           ,A2(getAll,showReceptor,rs)
+                           ,A2(getAll,showPrism,ps)
+                           ,A2(getAll,showFloor,ts)
+                           ,A2(getAll,
+                           showPlayer,
+                           _J.toList([p]))]))))));
               }();}
          _E.Case($moduleName,
-         "between lines 148 and 166");
+         "between lines 148 and 168");
       }();
    });
    var main = Graphics.Element.flow(Graphics.Element.down)(List.intersperse(A2(Graphics.Element.spacer,
@@ -753,10 +769,10 @@ Elm.Main.make = function (_elm) {
       return A2(lbind,
       planes,
       function (p) {
-         return A3(showSlice,
-         x,
+         return lreturn(A3(showSlice,
+         {_: {},pos: x},
          p,
-         testBoard);
+         testBoard));
       });
    })));
    var showAxis = function (a) {
@@ -767,7 +783,7 @@ Elm.Main.make = function (_elm) {
             case "Y": return _U.chr("Y");
             case "Z": return _U.chr("Z");}
          _E.Case($moduleName,
-         "between lines 243 and 247");
+         "between lines 245 and 249");
       }();
    };
    _elm.Main.values = {_op: _op
@@ -792,6 +808,7 @@ Elm.Main.make = function (_elm) {
                       ,iterAxes: iterAxes
                       ,groupOn: groupOn
                       ,showSlice: showSlice
+                      ,lreturn: lreturn
                       ,lbind: lbind
                       ,main: main
                       ,testBoard: testBoard
@@ -803,6 +820,9 @@ Elm.Main.make = function (_elm) {
                       ,showPlayer: showPlayer
                       ,showAxis: showAxis
                       ,showFloor: showFloor
+                      ,str: str
+                      ,chrElem: chrElem
+                      ,colorChrElem: colorChrElem
                       ,X: X
                       ,Y: Y
                       ,Z: Z
