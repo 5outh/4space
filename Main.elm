@@ -69,13 +69,21 @@ swap : Switch -> Switch
 swap s = if s == On then Off else On
 
 movePlayer : Movement -> Game -> Game
-movePlayer       m   g = 
+movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
       board' = g.board
       ls     = map (\e -> if e.pos == pos' then {e | switch <- swap e.switch } else e) g.board.lasers
   in if canMoveTo pos' g.board 
      then { g | plr <- { pos = pos'} }
      else { g | board <- {board' | lasers <- ls} }
+
+modifyFloorAt : Vector4 -> (Floor -> Floor) -> Board -> Board
+modifyFloorAt v f b = 
+  let fs = map (\e -> if e.pos == v then f e else e) b.tiles
+  in {b | tiles <- fs}
+
+addLaserAt : Vector4 -> Axis -> Board -> Board
+addLaserAt v a b = b
 
 pred : Int -> Int
 pred n = n - 1
