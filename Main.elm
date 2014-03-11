@@ -1,10 +1,16 @@
 import open Maybe
+import Char
+import Keyboard
 import Window
 import JavaScript
 
 type Vector4  = (Int, Int, Int, Int)
 data Axis = X | Y | Z | W
+
+-- I realize these are both completely isomorphic to True/False, but they're here for clarity.
 data Switch = On | Off 
+data Parity = Pos | Neg 
+data Movement = Movement Axis Parity
 
 type Positioned a = {a | pos     : Vector4 }
 type Switchable a = {a | switch  : Switch }
@@ -12,7 +18,7 @@ type Switchable a = {a | switch  : Switch }
 type Prism    = Positioned ( Switchable {} )
 type Receptor = Positioned ( Switchable {} )
 type Laser    = Positioned ( Switchable { dir : Axis } )
-type Floor    = Positioned { rays : Maybe [Axis] } 
+type Floor    = Positioned { rays : Maybe [Axis] }
 
 type Board = { prisms    : [Prism]
              , receptors : [Receptor]
@@ -26,24 +32,84 @@ type Game = { plr   : Positioned {}
             , won   : Bool 
             }
 
-data Event = SwitchLaser    Switch Vector4 Axis
-           | SwitchReceptor Switch Vector4
-           | SwitchPrism    Switch Vector4
-           | PlayerMove            Vector4
+data Event = SwitchLaser
+           | PlayerMove Movement
+           | Empty
 
-type EventSignal = Signal Event
+-- Stream of keyboard events
+eventSignal : Signal Event
+eventSignal = lift interpretKey Keyboard.lastPressed
+
+interpretKey : Keyboard.KeyCode -> Event
+interpretKey k = case Char.fromCode k of
+  'W' -> PlayerMove (Movement Y Neg)
+  'A' -> PlayerMove (Movement X Neg)
+  'S' -> PlayerMove (Movement Y Pos)
+  'D' -> PlayerMove (Movement X Pos)
+  'I' -> PlayerMove (Movement Z Neg)
+  'J' -> PlayerMove (Movement W Neg)
+  'K' -> PlayerMove (Movement Z Pos)
+  'L' -> PlayerMove (Movement W Pos)
+  ' ' -> SwitchLaser 
+  _   -> Empty
+
 
 handleEvent : Event -> Game -> Game
 handleEvent e = case e of
-  SwitchLaser    s v a -> switchLaser s v a
-  SwitchPrism    s v   -> switchPrism s v
-  SwitchReceptor s v   -> switchReceptor s v
-  PlayerMove       v   -> movePlayer v
+  SwitchLaser   -> switchLaser
+  PlayerMove  m -> movePlayer m
+  Empty         -> id
 
-switchLaser    s v a g = g
-switchReceptor s v   g = g
-switchPrism    s v   g = g
-movePlayer       v   g = g
+-- Needs to collect neighbor lasers and toggle them all,
+-- which should in turn set floor pieces with lasers on them
+-- and trigger any receptors as well.
+switchLaser g = g
+
+swap : Switch -> Switch
+swap s = if s == On then Off else On
+
+movePlayer : Movement -> Game -> Game
+movePlayer       m   g = 
+  let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
+      board' = g.board
+      ls     = map (\e -> if e.pos == pos' then {e | switch <- swap e.switch } else e) g.board.lasers
+  in if canMoveTo pos' g.board 
+     then { g | plr <- { pos = pos'} }
+     else { g | board <- {board' | lasers <- ls} }
+
+pred : Int -> Int
+pred n = n - 1
+
+succ : Int -> Int
+succ n = n + 1
+
+neighbors : Vector4 -> [Vector4]
+neighbors (x, y, z, w) = 
+  let new a = [pred a, a, succ a]
+  in new x `lbind` \x' ->
+     new y `lbind` \y' ->
+     new z `lbind` \z' ->
+     new w `lbind` \w' ->
+     lreturn (x', y', z', w')
+
+-- Player can move to any space that isn't occupied by a laser or a receptor
+canMoveTo : Vector4 -> Board -> Bool
+canMoveTo v b = 
+     isEmpty ( filter (\e -> e.pos == v) b.receptors )
+  && isEmpty ( filter (\e -> e.pos == v) b.lasers    )
+
+-- move a vector, unbounded
+moveVect : Movement -> Vector4 -> Vector4
+moveVect (Movement axis parity) = 
+  mapCoordinate axis <| if parity == Neg then pred else succ
+
+-- move a vector in some direction, bounded by mini and maxi
+boundedMoveVect : (Int, Int) -> Movement -> Vector4 -> Vector4
+boundedMoveVect (mini, maxi) m v = 
+  let (Movement axis parity) = m
+      mv = moveVect m v
+      c  = getCoordinate axis mv
+  in if c < mini || c > maxi then v else mv 
 
 --NB. Doesn't handle EQ.
 axisOrder : Axis -> Axis -> Order
@@ -127,10 +193,10 @@ showSlice p (a1, a2) b =
         let coordPairs = [mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> lreturn (y, x)
         in iterAxes (a1, a2) coordPairs f xs
       boardMap = 
-           flow up
+           flow down
         <| map (flow right) 
         <| groupOn len
-        <| map (maybe (colorChrElem grey '·') id) 
+        <| map (maybe (colorChrElem white '·') id) 
         <| foldr1 mergeJusts 
            [ getAll showLaser    ls
            , getAll showReceptor rs
@@ -164,7 +230,7 @@ testBoard =
       rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
-      mm = (0, 4)
+      mm = (0, 3)
   in Board ps rs ls ts mm
 
 testGame = Game {pos = (0,0,0,0)} testBoard False
@@ -246,11 +312,27 @@ colorSizeChrElem c h =
 center : (Int, Int) -> Element -> Element
 center (w, h) e = container w h middle e
 
+title : Element
+title = flow right <| map (colorSizeChrElem white 80) <| String.toList "4-space"
+
 centeredWithBg : (Int, Int) -> Element -> Element
-centeredWithBg (w, h) e = color darkCharcoal <| container w h middle e
+centeredWithBg (w, h) e = layers 
+  [ color darkCharcoal <| container w h middle e
+  , container w h midTop (flow up [title, spacer 40 40]) ]
 
 {- End Helpers -}
 
 {- Main -}
 
-main = lift2 centeredWithBg Window.dimensions (constant <| showGame testGame )
+main = let testing = False
+       in case testing of
+        False -> lift2 display Window.dimensions game
+        True  -> constant testSignal
+
+display : (Int, Int) -> Game -> Element
+display (w, h) g = centeredWithBg (w, h) (showGame g)
+
+game : Signal Game
+game = foldp handleEvent testGame eventSignal
+
+testSignal = asText <| neighbors (0,0,0,0)
