@@ -15,7 +15,7 @@ data Movement = Movement Axis Parity
 type Positioned a = {a | pos     : Vector4 }
 type Switchable a = {a | switch  : Switch }
 
-type Prism    = Positioned ( Switchable { onAxes : [Axis] } )
+type Prism    = Positioned ( Switchable { onAxes : [Axis], dir : Axis, orientation : Parity } )
 type Receptor = Positioned ( Switchable {} )
 type Laser    = Positioned ( Switchable { dir : Axis } )
 type Floor    = Positioned { rays : [Axis] }
@@ -60,6 +60,7 @@ handleEvent e = case e of
 swap : Switch -> Switch
 swap s = if s == On then Off else On
 
+-- NB. Flip all prism axes back to []!
 movePlayer : Movement -> Game -> Game
 movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
@@ -67,8 +68,11 @@ movePlayer m g =
       ps     = map (\e -> { e | onAxes <- [] } ) g.board.prisms
       bd'    = {board' | prisms <- ps}
       g'     = {g | board <- bd'}
+      movingToPrism = existsAtPosition pos' g'.board.prisms
   in if canMoveTo pos' g'.board 
-     then { g' | plr <- { pos = pos'} }
+     then if movingToPrism 
+          then { g' | board <- togglePrismAt pos' X g'.board} 
+          else { g' | plr <- { pos = pos'} }
      else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g'.board.lasers
               movingToLaser = existsAtPosition pos' g'.board.lasers
           in if movingToLaser 
@@ -110,14 +114,24 @@ togglePrismAt v a b =
   in if hasAxis 
      then b
      else let ps = mapAtPosition v ( \e -> {e | switch <- swap e.switch, onAxes <- a :: prism.onAxes} ) b.prisms
-          in {b | prisms <- ps }
+              (mini, maxi) = b.minmax
+              floors = case prism.orientation of
+                _   -> lineOfSight (getCoordinate a prism.pos, maxi) v prism.dir
+          in swapLasers prism.switch floors prism.dir {b | prisms <- ps}
 
 toggleLaserAt : Vector4 -> Board -> Board
 toggleLaserAt v b = 
   let laser = head <| filter (posEq v) b.lasers -- Guaranteed to exist, since fn is only called in such a case.
       ls    = mapAtPosition v (\e -> {e | switch <- swap e.switch }) b.lasers
-      fn s  = foldr1 (.) <| map (flip (swapLaser s) laser.dir) <| lineOfSight (b.minmax) v (laser.dir)
+      fn s  = swapLasers s (lineOfSight (b.minmax) v (laser.dir)) laser.dir
   in fn laser.switch {b | lasers <- ls}
+
+swapLasers : Switch -> [Vector4] -> Axis -> Board -> Board
+swapLasers s vs a b = 
+  let go xs acc = case xs of 
+    (z::zs) -> go zs (swapLaser s z a acc)
+    []      -> acc
+  in go vs b
 
 swapLaser : Switch -> Vector4 -> Axis -> Board -> Board
 swapLaser s v a b =
@@ -131,9 +145,7 @@ swapLaser s v a b =
                 xs  -> {flr | rays <- if a `elem` xs then xs else (a :: xs) } 
       b' = modifyFloorAt v floorMod b
       isRecep = existsAtPosition v b.receptors
-      isPrism = existsAtPosition v b.prisms
   in if isRecep then toggleReceptorAt v b'
-     else if isPrism then togglePrismAt v a b'
      else b'
 
 toggleReceptorAt : Vector4 -> Board -> Board
@@ -295,7 +307,7 @@ showGame game = flow down
 
 {- Begin Debug -}
 testBoard =
-  let ps = [ { switch = Off, pos = (2, 1, 0, 0), onAxes = [] } ]
+  let ps = [ { switch = Off, pos = (2, 1, 0, 0), onAxes = [], dir = X, orientation = Neg } ]
       rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
@@ -398,7 +410,7 @@ centeredWithBg (w, h) e = layers
 main = let testing = False
        in case testing of
         False -> lift2 display Window.dimensions game
-        True  -> constant testSignal
+        True  -> lift2 testDisplay Window.dimensions game
 
 display : (Int, Int) -> Game -> Element
 display (w, h) g = centeredWithBg (w, h) (showGame g)
