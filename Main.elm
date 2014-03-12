@@ -32,8 +32,7 @@ type Game = { plr   : Positioned {}
             , won   : Bool 
             }
 
-data Event = SwitchLaser
-           | PlayerMove Movement
+data Event = PlayerMove Movement
            | Empty
 
 -- Stream of keyboard events
@@ -50,20 +49,13 @@ interpretKey k = case Char.fromCode k of
   'J' -> PlayerMove (Movement W Neg)
   'K' -> PlayerMove (Movement Z Pos)
   'L' -> PlayerMove (Movement W Pos)
-  ' ' -> SwitchLaser 
   _   -> Empty
 
 
 handleEvent : Event -> Game -> Game
 handleEvent e = case e of
-  SwitchLaser   -> switchLaser
   PlayerMove  m -> movePlayer m
   Empty         -> id
-
--- Needs to collect neighbor lasers and toggle them all,
--- which should in turn set floor pieces with lasers on them
--- and trigger any receptors as well.
-switchLaser g = g
 
 swap : Switch -> Switch
 swap s = if s == On then Off else On
@@ -72,18 +64,52 @@ movePlayer : Movement -> Game -> Game
 movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
       board' = g.board
-      ls     = map (\e -> if e.pos == pos' then {e | switch <- swap e.switch } else e) g.board.lasers
   in if canMoveTo pos' g.board 
      then { g | plr <- { pos = pos'} }
-     else { g | board <- {board' | lasers <- ls} }
+     else let ls = map (\e -> if e.pos == pos' then {e | switch <- swap e.switch } else e) g.board.lasers
+              movingToLaser = any id <| map (\e -> e.pos == pos') g.board.lasers
+          in if movingToLaser 
+             then { g | board <- activateLaserAt pos' g.board }
+             else g
 
+-- Will apply function to empty floor if one does not exist.
 modifyFloorAt : Vector4 -> (Floor -> Floor) -> Board -> Board
 modifyFloorAt v f b = 
-  let fs = map (\e -> if e.pos == v then f e else e) b.tiles
-  in {b | tiles <- fs}
+  case any id <| map (\e -> e.pos == v) b.tiles of
+    True  -> let fs = map (\e -> if e.pos == v then f e else e) b.tiles
+             in {b | tiles <- fs}
+    False -> {b | tiles <- [ f {pos = v, rays = Nothing } ] }
 
+elem : a -> [a] -> Bool
+elem a zs = case zs of 
+  (x::xs) -> if a == x then True else elem a xs
+  []      -> False
+
+activateLaserAt : Vector4 -> Board -> Board
+activateLaserAt v b = 
+  let ls    = map (\e -> if e.pos == v then {e | switch <- swap e.switch } else e) b.lasers
+      laser = head <| filter (\e -> e.pos == v) ls -- Guaranteed to exist, since fn is only called in such a case.
+      b'    = {b | lasers <- ls}
+      lsrs  = lineOfSight (b.minmax) v (laser.dir)
+      b''   = foldr (<|) b' <| map (flip addLaserAt laser.dir) lsrs
+  in b''
+
+--borked somehow
 addLaserAt : Vector4 -> Axis -> Board -> Board
-addLaserAt v a b = b
+addLaserAt v a = 
+  let floorMod flr = case flr.rays of
+        Nothing -> {flr | rays <- Just [a] }
+        Just xs -> {flr | rays <- if a `elem` xs then Just xs else Just (a :: xs) }
+  in modifyFloorAt v floorMod
+
+-- (min, max) -> start vector -> orientation -> list of vectors in LOS
+lineOfSight : (Int, Int) -> Vector4 -> Axis -> [Vector4]
+lineOfSight (mini, maxi) v a = zipWith (setCoordinate a) [mini..maxi] (repeat (maxi-mini + 1) v)
+
+-- See in all directions
+sightFan : (Int, Int) -> Vector4 -> [Vector4]
+sightFan mm v = let axes = [X,Y,Z,W]
+           in axes `lbind` (lineOfSight mm v)
 
 pred : Int -> Int
 pred n = n - 1
@@ -206,11 +232,11 @@ showSlice p (a1, a2) b =
         <| groupOn len
         <| map (maybe (colorChrElem white '·') id) 
         <| foldr1 mergeJusts 
-           [ getAll showLaser    ls
+           [ getAll showPlayer   [p]
+           , getAll showLaser    ls
            , getAll showReceptor rs
            , getAll showPrism    ps
-           , getAll showFloor    ts
-           , getAll showPlayer   [p] ]
+           , getAll showFloor    ts ]
       cr pos e = container size size pos e
   in layers [ cr midTop boardMap
             , cr midBottom <| showAxis a1
@@ -229,10 +255,6 @@ showGame game = flow down
            lreturn <| showSlice game.plr p game.board
 
 {- Begin Debug -}
--- 2 x 2 x 2 x 2 = 16 entities
--- on slice (x, y, 0, 0), this should look like:
--- ?_
--- 
 testBoard =
   let ps = [ ]
       rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
@@ -294,7 +316,9 @@ showAxis a =  case a of
 
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
-showFloor = always <| chrElem ' '
+showFloor flr = case flr.rays of
+  Just _  -> colorChrElem red '·'
+  Nothing -> chrElem ' '
 {- End Show -}
 
 {- Begin Helpers -}
@@ -332,15 +356,18 @@ centeredWithBg (w, h) e = layers
 
 {- Main -}
 
-main = let testing = False
+main = let testing = True
        in case testing of
         False -> lift2 display Window.dimensions game
-        True  -> constant testSignal
+        True  -> lift2 testDisplay Window.dimensions game
 
 display : (Int, Int) -> Game -> Element
 display (w, h) g = centeredWithBg (w, h) (showGame g)
 
+testDisplay : (Int, Int) -> Game -> Element
+testDisplay (w, h) g = asText g
+
 game : Signal Game
 game = foldp handleEvent testGame eventSignal
 
-testSignal = asText <| neighbors (0,0,0,0)
+testSignal = asText (addLaserAt (1,0,0,0) X testBoard)
