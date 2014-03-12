@@ -64,8 +64,11 @@ movePlayer : Movement -> Game -> Game
 movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
       board' = g.board
+      movingToPrism = existsAtPosition pos' g.board.prisms
   in if canMoveTo pos' g.board 
-     then { g | plr <- { pos = pos'} }
+     then if movingToPrism 
+          then { g | board <- togglePrismAt pos' g.board, plr <- {pos = pos'} }
+          else { g | plr <- { pos = pos'} }
      else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g.board.lasers
               movingToLaser = existsAtPosition pos' g.board.lasers
           in if movingToLaser 
@@ -100,6 +103,15 @@ existsAtPosition v = any id . map (\e -> e.pos == v)
 mapAtPosition : Vector4 -> (Positioned a -> Positioned a) -> [Positioned a] -> [Positioned a]
 mapAtPosition v f = map (\e -> if v `posEq` e then f e else e)
 
+togglePrismAt : Vector4 -> Board -> Board
+togglePrismAt v b = 
+  let prism = head <| filter (posEq v) b.prisms
+      ps    = mapAtPosition v (\e -> {e | switch <- swap e.switch }) b.prisms
+      fn s  = foldr1 (.) 
+           <| map (\(a, xs) -> foldr1 (.) <| map (\v -> swapLaser s v a) xs)  
+           <| sightFan (b.minmax) v
+  in fn prism.switch {b | prisms <- ps}
+
 toggleLaserAt : Vector4 -> Board -> Board
 toggleLaserAt v b = 
   let laser = head <| filter (posEq v) b.lasers -- Guaranteed to exist, since fn is only called in such a case.
@@ -132,9 +144,9 @@ lineOfSight : (Int, Int) -> Vector4 -> Axis -> [Vector4]
 lineOfSight (mini, maxi) v a = zipWith (setCoordinate a) [mini..maxi] (repeat (maxi-mini + 1) v)
 
 -- See in all directions
-sightFan : (Int, Int) -> Vector4 -> [Vector4]
+--sightFan : (Int, Int) -> Vector4 -> [Vector4]
 sightFan mm v = let axes = [X,Y,Z,W]
-           in axes `lbind` (lineOfSight mm v)
+           in map (\a -> (a, lineOfSight mm v a)) axes
 
 pred : Int -> Int
 pred n = n - 1
@@ -281,7 +293,7 @@ showGame game = flow down
 
 {- Begin Debug -}
 testBoard =
-  let ps = [ ]
+  let ps = [ { switch = Off, pos = (2, 1, 0, 0) } ]
       rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
@@ -384,7 +396,7 @@ centeredWithBg (w, h) e = layers
 main = let testing = False
        in case testing of
         False -> lift2 display Window.dimensions game
-        True  -> lift2 testDisplay Window.dimensions game
+        True  -> constant testSignal
 
 display : (Int, Int) -> Game -> Element
 display (w, h) g = centeredWithBg (w, h) (showGame g)
@@ -395,4 +407,4 @@ testDisplay (w, h) g = asText g
 game : Signal Game
 game = foldp handleEvent testGame eventSignal
 
-testSignal = asText "hello"
+testSignal = asText <| sightFan (0,4) (0,0,0,0)
