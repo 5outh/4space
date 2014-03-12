@@ -15,10 +15,10 @@ data Movement = Movement Axis Parity
 type Positioned a = {a | pos     : Vector4 }
 type Switchable a = {a | switch  : Switch }
 
-type Prism    = Positioned ( Switchable {} )
+type Prism    = Positioned ( Switchable { onAxes : [Axis] } )
 type Receptor = Positioned ( Switchable {} )
 type Laser    = Positioned ( Switchable { dir : Axis } )
-type Floor    = Positioned { rays : Maybe [Axis] }
+type Floor    = Positioned { rays : [Axis] }
 
 type Board = { prisms    : [Prism]
              , receptors : [Receptor]
@@ -64,16 +64,16 @@ movePlayer : Movement -> Game -> Game
 movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
       board' = g.board
-      movingToPrism = existsAtPosition pos' g.board.prisms
-  in if canMoveTo pos' g.board 
-     then if movingToPrism 
-          then { g | board <- togglePrismAt pos' g.board, plr <- {pos = pos'} }
-          else { g | plr <- { pos = pos'} }
-     else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g.board.lasers
-              movingToLaser = existsAtPosition pos' g.board.lasers
+      ps     = map (\e -> { e | onAxes <- [] } ) g.board.prisms
+      bd'    = {board' | prisms <- ps}
+      g'     = {g | board <- bd'}
+  in if canMoveTo pos' g'.board 
+     then { g' | plr <- { pos = pos'} }
+     else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g'.board.lasers
+              movingToLaser = existsAtPosition pos' g'.board.lasers
           in if movingToLaser 
-             then { g | board <- toggleLaserAt pos' g.board }
-             else g
+             then { g' | board <- toggleLaserAt pos' g'.board }
+             else g'
 
 -- Will apply function to empty floor if one does not exist.
 modifyFloorAt : Vector4 -> (Floor -> Floor) -> Board -> Board
@@ -81,7 +81,7 @@ modifyFloorAt v f b =
   case any id <| map (\e -> e.pos == v) b.tiles of
     True  -> let fs = map (\e -> if e.pos == v then f e else e) b.tiles
              in {b | tiles <- fs}
-    False -> {b | tiles <- [ f {pos = v, rays = Nothing } ] ++ b.tiles }
+    False -> {b | tiles <- [ f {pos = v, rays = [] } ] ++ b.tiles }
 
 elem : a -> [a] -> Bool
 elem a zs = case zs of 
@@ -103,14 +103,14 @@ existsAtPosition v = any id . map (\e -> e.pos == v)
 mapAtPosition : Vector4 -> (Positioned a -> Positioned a) -> [Positioned a] -> [Positioned a]
 mapAtPosition v f = map (\e -> if v `posEq` e then f e else e)
 
-togglePrismAt : Vector4 -> Board -> Board
-togglePrismAt v b = 
-  let prism = head <| filter (posEq v) b.prisms
-      ps    = mapAtPosition v (\e -> {e | switch <- swap e.switch }) b.prisms
-      fn s  = foldr1 (.) 
-           <| map (\(a, xs) -> foldr1 (.) <| map (\v -> swapLaser s v a) xs)  
-           <| sightFan (b.minmax) v
-  in fn prism.switch {b | prisms <- ps}
+togglePrismAt : Vector4 -> Axis -> Board -> Board
+togglePrismAt v a b =
+  let prism   = head <| filter (posEq v) b.prisms
+      hasAxis = a `elem` prism.onAxes
+  in if hasAxis 
+     then b
+     else let ps = mapAtPosition v ( \e -> {e | switch <- swap e.switch, onAxes <- a :: prism.onAxes} ) b.prisms
+          in {b | prisms <- ps }
 
 toggleLaserAt : Vector4 -> Board -> Board
 toggleLaserAt v b = 
@@ -120,19 +120,21 @@ toggleLaserAt v b =
   in fn laser.switch {b | lasers <- ls}
 
 swapLaser : Switch -> Vector4 -> Axis -> Board -> Board
-swapLaser s v a b = 
+swapLaser s v a b =
   let floorMod flr =
         case s of
         On  -> case flr.rays of
-                Nothing -> flr
-                Just xs -> {flr | rays <- Just (remove a xs) }
+                [] -> flr
+                xs  -> {flr | rays <- (remove a xs) }
         Off -> case flr.rays of
-                Nothing -> {flr | rays <- Just [a] }
-                Just xs -> {flr | rays <- if a `elem` xs then Just xs else Just (a :: xs) } 
+                [] -> {flr | rays <- [a] }
+                xs  -> {flr | rays <- if a `elem` xs then xs else (a :: xs) } 
       b' = modifyFloorAt v floorMod b
-  in case existsAtPosition v b.receptors of
-      True  -> toggleReceptorAt v b'
-      False -> b'
+      isRecep = existsAtPosition v b.receptors
+      isPrism = existsAtPosition v b.prisms
+  in if isRecep then toggleReceptorAt v b'
+     else if isPrism then togglePrismAt v a b'
+     else b'
 
 toggleReceptorAt : Vector4 -> Board -> Board
 toggleReceptorAt v b = 
@@ -141,7 +143,7 @@ toggleReceptorAt v b =
 
 -- (min, max) -> start vector -> orientation -> list of vectors in LOS
 lineOfSight : (Int, Int) -> Vector4 -> Axis -> [Vector4]
-lineOfSight (mini, maxi) v a = zipWith (setCoordinate a) [mini..maxi] (repeat (maxi-mini + 1) v)
+lineOfSight (mini, maxi) v a = remove v <| zipWith (setCoordinate a) [mini..maxi] (repeat (maxi-mini + 1) v)
 
 -- See in all directions
 --sightFan : (Int, Int) -> Vector4 -> [Vector4]
@@ -293,7 +295,7 @@ showGame game = flow down
 
 {- Begin Debug -}
 testBoard =
-  let ps = [ { switch = Off, pos = (2, 1, 0, 0) } ]
+  let ps = [ { switch = Off, pos = (2, 1, 0, 0), onAxes = [] } ]
       rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
@@ -354,8 +356,8 @@ showAxis a =  case a of
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
 showFloor flr = case flr.rays of
-  Just (_::_) -> colorChrElem red '·'
-  _           -> colorChrElem white '·'
+  []          -> colorChrElem white '·'
+  _           -> colorChrElem red '·'
 {- End Show -}
 
 {- Begin Helpers -}
