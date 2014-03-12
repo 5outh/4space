@@ -66,10 +66,10 @@ movePlayer m g =
       board' = g.board
   in if canMoveTo pos' g.board 
      then { g | plr <- { pos = pos'} }
-     else let ls = map (\e -> if e.pos == pos' then {e | switch <- swap e.switch } else e) g.board.lasers
-              movingToLaser = any id <| map (\e -> e.pos == pos') g.board.lasers
+     else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g.board.lasers
+              movingToLaser = existsAtPosition pos' g.board.lasers
           in if movingToLaser 
-             then { g | board <- activateLaserAt pos' g.board }
+             then { g | board <- toggleLaserAt pos' g.board }
              else g
 
 -- Will apply function to empty floor if one does not exist.
@@ -78,29 +78,54 @@ modifyFloorAt v f b =
   case any id <| map (\e -> e.pos == v) b.tiles of
     True  -> let fs = map (\e -> if e.pos == v then f e else e) b.tiles
              in {b | tiles <- fs}
-    False -> {b | tiles <- [ f {pos = v, rays = Nothing } ] }
+    False -> {b | tiles <- [ f {pos = v, rays = Nothing } ] ++ b.tiles }
 
 elem : a -> [a] -> Bool
 elem a zs = case zs of 
   (x::xs) -> if a == x then True else elem a xs
   []      -> False
 
-activateLaserAt : Vector4 -> Board -> Board
-activateLaserAt v b = 
-  let ls    = map (\e -> if e.pos == v then {e | switch <- swap e.switch } else e) b.lasers
-      laser = head <| filter (\e -> e.pos == v) ls -- Guaranteed to exist, since fn is only called in such a case.
-      b'    = {b | lasers <- ls}
-      lsrs  = lineOfSight (b.minmax) v (laser.dir)
-      b''   = foldr (<|) b' <| map (flip addLaserAt laser.dir) lsrs
-  in b''
+-- remove the first occurance of a
+remove : a -> [a] -> [a]
+remove a zs = case zs of
+  (x::xs) -> if a == x then xs else remove a (x::xs)
+  []      -> []
 
---borked somehow
-addLaserAt : Vector4 -> Axis -> Board -> Board
-addLaserAt v a = 
-  let floorMod flr = case flr.rays of
-        Nothing -> {flr | rays <- Just [a] }
-        Just xs -> {flr | rays <- if a `elem` xs then Just xs else Just (a :: xs) }
-  in modifyFloorAt v floorMod
+posEq : Vector4 -> Positioned a -> Bool
+posEq v e = e.pos == v
+
+existsAtPosition : Vector4 -> [Positioned a] -> Bool
+existsAtPosition v = any id . map (\e -> e.pos == v)
+
+mapAtPosition : Vector4 -> (Positioned a -> Positioned a) -> [Positioned a] -> [Positioned a]
+mapAtPosition v f = map (\e -> if v `posEq` e then f e else e)
+
+toggleLaserAt : Vector4 -> Board -> Board
+toggleLaserAt v b = 
+  let laser = head <| filter (posEq v) b.lasers -- Guaranteed to exist, since fn is only called in such a case.
+      ls    = mapAtPosition v (\e -> {e | switch <- swap e.switch }) b.lasers
+      fn s  = foldr1 (.) <| map (flip (swapLaser s) laser.dir) <| lineOfSight (b.minmax) v (laser.dir)
+  in fn laser.switch {b | lasers <- ls}
+
+swapLaser : Switch -> Vector4 -> Axis -> Board -> Board
+swapLaser s v a b = 
+  let floorMod flr =
+        case s of
+        On  -> case flr.rays of
+                Nothing -> flr
+                Just xs -> {flr | rays <- Just (remove a xs) }
+        Off -> case flr.rays of
+                Nothing -> {flr | rays <- Just [a] }
+                Just xs -> {flr | rays <- if a `elem` xs then Just xs else Just (a :: xs) } 
+      b' = modifyFloorAt v floorMod b
+  in case existsAtPosition v b.receptors of
+      True  -> toggleReceptorAt v b'
+      False -> b'
+
+toggleReceptorAt : Vector4 -> Board -> Board
+toggleReceptorAt v b = 
+  let rs = mapAtPosition v (\e -> {e | switch <- swap e.switch }) b.receptors
+  in {b | receptors <- rs}
 
 -- (min, max) -> start vector -> orientation -> list of vectors in LOS
 lineOfSight : (Int, Int) -> Vector4 -> Axis -> [Vector4]
@@ -129,8 +154,8 @@ neighbors (x, y, z, w) =
 -- Player can move to any space that isn't occupied by a laser or a receptor
 canMoveTo : Vector4 -> Board -> Bool
 canMoveTo v b = 
-     isEmpty ( filter (\e -> e.pos == v) b.receptors )
-  && isEmpty ( filter (\e -> e.pos == v) b.lasers    )
+     isEmpty ( filter (posEq v) b.receptors )
+  && isEmpty ( filter (posEq v) b.lasers    )
 
 -- move a vector, unbounded
 moveVect : Movement -> Vector4 -> Vector4
@@ -257,7 +282,7 @@ showGame game = flow down
 {- Begin Debug -}
 testBoard =
   let ps = [ ]
-      rs = [ { switch = Off, pos = (1, 1, 0, 0) } ]
+      rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
       mm = (0, 3)
@@ -317,8 +342,8 @@ showAxis a =  case a of
 -- TODO: showFloor (will depend on player view)
 showFloor : Floor -> Element
 showFloor flr = case flr.rays of
-  Just _  -> colorChrElem red '·'
-  Nothing -> chrElem ' '
+  Just (_::_) -> colorChrElem red '·'
+  _           -> colorChrElem white '·'
 {- End Show -}
 
 {- Begin Helpers -}
@@ -356,7 +381,7 @@ centeredWithBg (w, h) e = layers
 
 {- Main -}
 
-main = let testing = True
+main = let testing = False
        in case testing of
         False -> lift2 display Window.dimensions game
         True  -> lift2 testDisplay Window.dimensions game
@@ -370,4 +395,4 @@ testDisplay (w, h) g = asText g
 game : Signal Game
 game = foldp handleEvent testGame eventSignal
 
-testSignal = asText (addLaserAt (1,0,0,0) X testBoard)
+testSignal = asText "hello"

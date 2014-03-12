@@ -30,6 +30,7 @@ Elm.Main.make = function (_elm) {
    var Time = Elm.Time.make(_elm);
    var Window = Elm.Window.make(_elm);
    var _op = {};
+   var testSignal = Text.asText("hello");
    var testDisplay = F2(function (_v0,
    g) {
       return function () {
@@ -37,7 +38,7 @@ Elm.Main.make = function (_elm) {
          {case "_Tuple2":
             return Text.asText(g);}
          _E.Case($moduleName,
-         "on line 368, column 24 to 32");
+         "on line 393, column 24 to 32");
       }();
    });
    var center = F2(function (_v4,
@@ -51,7 +52,7 @@ Elm.Main.make = function (_elm) {
               Graphics.Element.middle,
               e);}
          _E.Case($moduleName,
-         "on line 345, column 19 to 41");
+         "on line 370, column 19 to 41");
       }();
    });
    var str = function (c) {
@@ -93,7 +94,7 @@ Elm.Main.make = function (_elm) {
                                                                40,
                                                                40)])))]));}
          _E.Case($moduleName,
-         "between lines 351 and 353");
+         "between lines 376 and 378");
       }();
    });
    var showFloor = function (flr) {
@@ -101,13 +102,15 @@ Elm.Main.make = function (_elm) {
          var _v12 = flr.rays;
          switch (_v12.ctor)
          {case "Just":
-            return A2(colorChrElem,
-              Color.red,
-              _U.chr("·"));
-            case "Nothing":
-            return chrElem(_U.chr(" "));}
-         _E.Case($moduleName,
-         "between lines 319 and 324");
+            switch (_v12._0.ctor)
+              {case "::":
+                 return A2(colorChrElem,
+                   Color.red,
+                   _U.chr("·"));}
+              break;}
+         return A2(colorChrElem,
+         Color.white,
+         _U.chr("·"));
       }();
    };
    var showPlayer = Basics.always(A2(colorChrElem,
@@ -157,37 +160,37 @@ Elm.Main.make = function (_elm) {
    var mergeJusts = F2(function (xs,
    ys) {
       return function () {
-         var _v15 = {ctor: "_Tuple2"
+         var _v17 = {ctor: "_Tuple2"
                     ,_0: xs
                     ,_1: ys};
-         switch (_v15.ctor)
+         switch (_v17.ctor)
          {case "_Tuple2":
-            switch (_v15._0.ctor)
+            switch (_v17._0.ctor)
               {case "::":
-                 switch (_v15._0._0.ctor)
+                 switch (_v17._0._0.ctor)
                    {case "Just":
-                      switch (_v15._1.ctor)
+                      switch (_v17._1.ctor)
                         {case "::": return {ctor: "::"
-                                           ,_0: Maybe.Just(_v15._0._0._0)
+                                           ,_0: Maybe.Just(_v17._0._0._0)
                                            ,_1: A2(mergeJusts,
-                                           _v15._0._1,
-                                           _v15._1._1)};}
+                                           _v17._0._1,
+                                           _v17._1._1)};}
                         break;
                       case "Nothing":
-                      switch (_v15._1.ctor)
+                      switch (_v17._1.ctor)
                         {case "::":
-                           switch (_v15._1._0.ctor)
+                           switch (_v17._1._0.ctor)
                              {case "Just": return {ctor: "::"
-                                                  ,_0: Maybe.Just(_v15._1._0._0)
+                                                  ,_0: Maybe.Just(_v17._1._0._0)
                                                   ,_1: A2(mergeJusts,
-                                                  _v15._0._1,
-                                                  _v15._1._1)};
+                                                  _v17._0._1,
+                                                  _v17._1._1)};
                                 case "Nothing":
                                 return {ctor: "::"
                                        ,_0: Maybe.Nothing
                                        ,_1: A2(mergeJusts,
-                                       _v15._0._1,
-                                       _v15._1._1)};}
+                                       _v17._0._1,
+                                       _v17._1._1)};}
                              break;}
                         break;}
                    break;}
@@ -201,32 +204,32 @@ Elm.Main.make = function (_elm) {
    ys,
    zs) {
       return function () {
-         var _v26 = {ctor: "_Tuple4"
+         var _v28 = {ctor: "_Tuple4"
                     ,_0: ws
                     ,_1: xs
                     ,_2: ys
                     ,_3: zs};
-         switch (_v26.ctor)
+         switch (_v28.ctor)
          {case "_Tuple4":
-            switch (_v26._0.ctor)
+            switch (_v28._0.ctor)
               {case "::":
-                 switch (_v26._1.ctor)
+                 switch (_v28._1.ctor)
                    {case "::":
-                      switch (_v26._2.ctor)
+                      switch (_v28._2.ctor)
                         {case "::":
-                           switch (_v26._3.ctor)
+                           switch (_v28._3.ctor)
                              {case "::": return {ctor: "::"
                                                 ,_0: A4(f,
-                                                _v26._0._0,
-                                                _v26._1._0,
-                                                _v26._2._0,
-                                                _v26._3._0)
+                                                _v28._0._0,
+                                                _v28._1._0,
+                                                _v28._2._0,
+                                                _v28._3._0)
                                                 ,_1: A5(zipWith4,
                                                 f,
-                                                _v26._0._1,
-                                                _v26._1._1,
-                                                _v26._2._1,
-                                                _v26._3._1)};}
+                                                _v28._0._1,
+                                                _v28._1._1,
+                                                _v28._2._1,
+                                                _v28._3._1)};}
                              break;}
                         break;}
                    break;}
@@ -240,27 +243,15 @@ Elm.Main.make = function (_elm) {
                          ,b]],
       s);
    });
-   var canMoveTo = F2(function (v,
-   b) {
-      return List.isEmpty(A2(List.filter,
-      function (e) {
-         return _U.eq(e.pos,v);
-      },
-      b.receptors)) && List.isEmpty(A2(List.filter,
-      function (e) {
-         return _U.eq(e.pos,v);
-      },
-      b.lasers));
-   });
    var succ = function (n) {
       return n + 1;
    };
    var pred = function (n) {
       return n - 1;
    };
-   var neighbors = function (_v39) {
+   var neighbors = function (_v41) {
       return function () {
-         switch (_v39.ctor)
+         switch (_v41.ctor)
          {case "_Tuple4":
             return function () {
                  var $new = function (a) {
@@ -269,16 +260,16 @@ Elm.Main.make = function (_elm) {
                                      ,succ(a)]);
                  };
                  return A2(lbind,
-                 $new(_v39._0),
+                 $new(_v41._0),
                  function (x$) {
                     return A2(lbind,
-                    $new(_v39._1),
+                    $new(_v41._1),
                     function (y$) {
                        return A2(lbind,
-                       $new(_v39._2),
+                       $new(_v41._2),
                        function (z$) {
                           return A2(lbind,
-                          $new(_v39._3),
+                          $new(_v41._3),
                           function (w$) {
                              return lreturn({ctor: "_Tuple4"
                                             ,_0: x$
@@ -291,9 +282,51 @@ Elm.Main.make = function (_elm) {
                  });
               }();}
          _E.Case($moduleName,
-         "between lines 122 and 127");
+         "between lines 147 and 152");
       }();
    };
+   var existsAtPosition = function (v) {
+      return function ($) {
+         return List.any(Basics.id)(List.map(function (e) {
+            return _U.eq(e.pos,v);
+         })($));
+      };
+   };
+   var posEq = F2(function (v,e) {
+      return _U.eq(e.pos,v);
+   });
+   var mapAtPosition = F2(function (v,
+   f) {
+      return List.map(function (e) {
+         return A2(posEq,
+         v,
+         e) ? f(e) : e;
+      });
+   });
+   var canMoveTo = F2(function (v,
+   b) {
+      return List.isEmpty(A2(List.filter,
+      posEq(v),
+      b.receptors)) && List.isEmpty(A2(List.filter,
+      posEq(v),
+      b.lasers));
+   });
+   var remove = F2(function (a,
+   zs) {
+      return function () {
+         switch (zs.ctor)
+         {case "::": return _U.eq(a,
+              zs._0) ? zs._1 : A2(remove,
+              a,
+              {ctor: "::"
+              ,_0: zs._0
+              ,_1: zs._1});
+            case "[]":
+            return _J.toList([]);}
+         _E.Case($moduleName,
+         "between lines 90 and 92");
+      }();
+   });
    var elem = F2(function (a,zs) {
       return function () {
          switch (zs.ctor)
@@ -310,17 +343,18 @@ Elm.Main.make = function (_elm) {
    f,
    b) {
       return function () {
-         var _v48 = List.any(Basics.id)(A2(List.map,
+         var _v53 = List.any(Basics.id)(A2(List.map,
          function (e) {
             return _U.eq(e.pos,v);
          },
          b.tiles));
-         switch (_v48)
+         switch (_v53)
          {case false:
             return _U.replace([["tiles"
-                               ,_J.toList([f({_: {}
-                                             ,pos: v
-                                             ,rays: Maybe.Nothing})])]],
+                               ,_L.append(_J.toList([f({_: {}
+                                                       ,pos: v
+                                                       ,rays: Maybe.Nothing})]),
+                               b.tiles)]],
               b);
             case true: return function () {
                  var fs = A2(List.map,
@@ -335,34 +369,6 @@ Elm.Main.make = function (_elm) {
               }();}
          _E.Case($moduleName,
          "between lines 78 and 81");
-      }();
-   });
-   var addLaserAt = F2(function (v,
-   a) {
-      return function () {
-         var floorMod = function (flr) {
-            return function () {
-               var _v49 = flr.rays;
-               switch (_v49.ctor)
-               {case "Just":
-                  return _U.replace([["rays"
-                                     ,A2(elem,
-                                     a,
-                                     _v49._0) ? Maybe.Just(_v49._0) : Maybe.Just({ctor: "::"
-                                                                                 ,_0: a
-                                                                                 ,_1: _v49._0})]],
-                    flr);
-                  case "Nothing":
-                  return _U.replace([["rays"
-                                     ,Maybe.Just(_J.toList([a]))]],
-                    flr);}
-               _E.Case($moduleName,
-               "between lines 100 and 103");
-            }();
-         };
-         return A2(modifyFloorAt,
-         v,
-         floorMod);
       }();
    });
    var Empty = {ctor: "Empty"};
@@ -412,27 +418,106 @@ Elm.Main.make = function (_elm) {
       return _U.eq(s,
       On) ? Off : On;
    };
-   var showPrism = function (_v51) {
+   var toggleReceptorAt = F2(function (v,
+   b) {
+      return function () {
+         var rs = A3(mapAtPosition,
+         v,
+         function (e) {
+            return _U.replace([["$switch"
+                               ,swap(e.$switch)]],
+            e);
+         },
+         b.receptors);
+         return _U.replace([["receptors"
+                            ,rs]],
+         b);
+      }();
+   });
+   var swapLaser = F4(function (s,
+   v,
+   a,
+   b) {
+      return function () {
+         var floorMod = function (flr) {
+            return function () {
+               switch (s.ctor)
+               {case "Off":
+                  return function () {
+                       var _v55 = flr.rays;
+                       switch (_v55.ctor)
+                       {case "Just":
+                          return _U.replace([["rays"
+                                             ,A2(elem,
+                                             a,
+                                             _v55._0) ? Maybe.Just(_v55._0) : Maybe.Just({ctor: "::"
+                                                                                         ,_0: a
+                                                                                         ,_1: _v55._0})]],
+                            flr);
+                          case "Nothing":
+                          return _U.replace([["rays"
+                                             ,Maybe.Just(_J.toList([a]))]],
+                            flr);}
+                       _E.Case($moduleName,
+                       "between lines 117 and 120");
+                    }();
+                  case "On": return function () {
+                       var _v57 = flr.rays;
+                       switch (_v57.ctor)
+                       {case "Just":
+                          return _U.replace([["rays"
+                                             ,Maybe.Just(A2(remove,
+                                             a,
+                                             _v57._0))]],
+                            flr);
+                          case "Nothing": return flr;}
+                       _E.Case($moduleName,
+                       "between lines 114 and 117");
+                    }();}
+               _E.Case($moduleName,
+               "between lines 113 and 120");
+            }();
+         };
+         var b$ = A3(modifyFloorAt,
+         v,
+         floorMod,
+         b);
+         return function () {
+            var _v59 = A2(existsAtPosition,
+            v,
+            b.receptors);
+            switch (_v59)
+            {case false: return b$;
+               case true:
+               return A2(toggleReceptorAt,
+                 v,
+                 b$);}
+            _E.Case($moduleName,
+            "between lines 121 and 123");
+         }();
+      }();
+   });
+   var showPrism = function (_v60) {
       return function () {
          return colorChrElem(Color.green)(function () {
-            var _v53 = _v51.$switch;
-            switch (_v53.ctor)
+            var _v62 = _v60.$switch;
+            switch (_v62.ctor)
             {case "Off": return _U.chr("*");
                case "On": return _U.chr("%");}
             _E.Case($moduleName,
-            "between lines 288 and 290");
+            "between lines 313 and 315");
          }());
       }();
    };
-   var showReceptor = function (_v54) {
+   var showReceptor = function (_v63) {
       return function () {
          return colorChrElem(Color.blue)(function () {
-            var _v56 = _v54.$switch;
-            switch (_v56.ctor)
+            var _v65 = _v63.$switch;
+            switch (_v65.ctor)
             {case "Off": return _U.chr("_");
                case "On": return _U.chr("$");}
             _E.Case($moduleName,
-            "between lines 293 and 295");
+            "between lines 318 and 320");
          }());
       }();
    };
@@ -442,8 +527,8 @@ Elm.Main.make = function (_elm) {
    var X = {ctor: "X"};
    var interpretKey = function (k) {
       return function () {
-         var _v57 = Char.fromCode(k);
-         switch (_v57 + "")
+         var _v66 = Char.fromCode(k);
+         switch (_v66 + "")
          {case "A":
             return PlayerMove(A2(Movement,
               X,
@@ -485,70 +570,70 @@ Elm.Main.make = function (_elm) {
    var axisOrder = F2(function (a,
    b) {
       return function () {
-         var _v58 = {ctor: "_Tuple2"
+         var _v67 = {ctor: "_Tuple2"
                     ,_0: a
                     ,_1: b};
-         switch (_v58.ctor)
+         switch (_v67.ctor)
          {case "_Tuple2":
-            switch (_v58._0.ctor)
+            switch (_v67._0.ctor)
               {case "W": return Basics.GT;
                  case "X": return Basics.LT;
-                 case "Y": return _U.eq(_v58._1,
+                 case "Y": return _U.eq(_v67._1,
                    X) ? Basics.GT : Basics.LT;
-                 case "Z": return _U.eq(_v58._1,
+                 case "Z": return _U.eq(_v67._1,
                    W) ? Basics.LT : Basics.GT;}
               break;}
          _E.Case($moduleName,
-         "between lines 150 and 154");
+         "between lines 175 and 179");
       }();
    });
    var mapCoordinate = F3(function (a,
    f,
-   _v61) {
+   _v70) {
       return function () {
-         switch (_v61.ctor)
+         switch (_v70.ctor)
          {case "_Tuple4":
             return function () {
                  switch (a.ctor)
                  {case "W":
                     return {ctor: "_Tuple4"
-                           ,_0: _v61._0
-                           ,_1: _v61._1
-                           ,_2: _v61._2
-                           ,_3: f(_v61._3)};
+                           ,_0: _v70._0
+                           ,_1: _v70._1
+                           ,_2: _v70._2
+                           ,_3: f(_v70._3)};
                     case "X":
                     return {ctor: "_Tuple4"
-                           ,_0: f(_v61._0)
-                           ,_1: _v61._1
-                           ,_2: _v61._2
-                           ,_3: _v61._3};
+                           ,_0: f(_v70._0)
+                           ,_1: _v70._1
+                           ,_2: _v70._2
+                           ,_3: _v70._3};
                     case "Y":
                     return {ctor: "_Tuple4"
-                           ,_0: _v61._0
-                           ,_1: f(_v61._1)
-                           ,_2: _v61._2
-                           ,_3: _v61._3};
+                           ,_0: _v70._0
+                           ,_1: f(_v70._1)
+                           ,_2: _v70._2
+                           ,_3: _v70._3};
                     case "Z":
                     return {ctor: "_Tuple4"
-                           ,_0: _v61._0
-                           ,_1: _v61._1
-                           ,_2: f(_v61._2)
-                           ,_3: _v61._3};}
+                           ,_0: _v70._0
+                           ,_1: _v70._1
+                           ,_2: f(_v70._2)
+                           ,_3: _v70._3};}
                  _E.Case($moduleName,
-                 "between lines 160 and 164");
+                 "between lines 185 and 189");
               }();}
          _E.Case($moduleName,
-         "between lines 160 and 164");
+         "between lines 185 and 189");
       }();
    });
-   var moveVect = function (_v68) {
+   var moveVect = function (_v77) {
       return function () {
-         switch (_v68.ctor)
+         switch (_v77.ctor)
          {case "Movement":
-            return mapCoordinate(_v68._0)(_U.eq(_v68._1,
+            return mapCoordinate(_v77._0)(_U.eq(_v77._1,
               Neg) ? pred : succ);}
          _E.Case($moduleName,
-         "on line 138, column 3 to 61");
+         "on line 163, column 3 to 61");
       }();
    };
    var setCoordinate = F2(function (a,
@@ -557,55 +642,52 @@ Elm.Main.make = function (_elm) {
       a,
       Basics.always(i));
    });
-   var lineOfSight = F3(function (_v72,
+   var lineOfSight = F3(function (_v81,
    v,
    a) {
       return function () {
-         switch (_v72.ctor)
+         switch (_v81.ctor)
          {case "_Tuple2":
             return A3(List.zipWith,
               setCoordinate(a),
-              _L.range(_v72._0,_v72._1),
+              _L.range(_v81._0,_v81._1),
               A2(List.repeat,
-              _v72._1 - _v72._0 + 1,
+              _v81._1 - _v81._0 + 1,
               v));}
          _E.Case($moduleName,
-         "on line 107, column 32 to 96");
+         "on line 132, column 32 to 96");
       }();
    });
-   var activateLaserAt = F2(function (v,
+   var toggleLaserAt = F2(function (v,
    b) {
       return function () {
-         var ls = A2(List.map,
+         var ls = A3(mapAtPosition,
+         v,
          function (e) {
-            return _U.eq(e.pos,
-            v) ? _U.replace([["$switch"
-                             ,swap(e.$switch)]],
-            e) : e;
+            return _U.replace([["$switch"
+                               ,swap(e.$switch)]],
+            e);
          },
          b.lasers);
          var laser = List.head(A2(List.filter,
-         function (e) {
-            return _U.eq(e.pos,v);
-         },
-         ls));
-         var lsrs = A3(lineOfSight,
-         b.minmax,
-         v,
-         laser.dir);
-         var b$ = _U.replace([["lasers"
-                              ,ls]],
-         b);
-         var b$$ = A2(List.foldr,
-         F2(function (x,y) {
-            return x(y);
-         }),
-         b$)(A2(List.map,
-         A2(Basics.flip,
-         addLaserAt,
-         laser.dir),
-         lsrs));
-         return b$$;
+         posEq(v),
+         b.lasers));
+         var fn = function (s) {
+            return List.foldr1(F2(function (x,
+            y) {
+               return function ($) {
+                  return x(y($));
+               };
+            }))(List.map(A2(Basics.flip,
+            swapLaser(s),
+            laser.dir))(A3(lineOfSight,
+            b.minmax,
+            v,
+            laser.dir)));
+         };
+         return A2(fn,
+         laser.$switch,
+         _U.replace([["lasers",ls]],b));
       }();
    });
    var sightFan = F2(function (mm,
@@ -637,45 +719,45 @@ Elm.Main.make = function (_elm) {
       Basics.always(i));
    });
    var getCoordinate = F2(function (a,
-   _v76) {
+   _v85) {
       return function () {
-         switch (_v76.ctor)
+         switch (_v85.ctor)
          {case "_Tuple4":
             return function () {
                  switch (a.ctor)
-                 {case "W": return _v76._3;
-                    case "X": return _v76._0;
-                    case "Y": return _v76._1;
-                    case "Z": return _v76._2;}
+                 {case "W": return _v85._3;
+                    case "X": return _v85._0;
+                    case "Y": return _v85._1;
+                    case "Z": return _v85._2;}
                  _E.Case($moduleName,
-                 "between lines 167 and 171");
+                 "between lines 192 and 196");
               }();}
          _E.Case($moduleName,
-         "between lines 167 and 171");
+         "between lines 192 and 196");
       }();
    });
-   var boundedMoveVect = F3(function (_v83,
+   var boundedMoveVect = F3(function (_v92,
    m,
    v) {
       return function () {
-         switch (_v83.ctor)
+         switch (_v92.ctor)
          {case "_Tuple2":
             return function () {
                  var mv = A2(moveVect,m,v);
                  var $raw = m,
                  $ = $raw.ctor === "Movement" ? $raw : _E.Case($moduleName,
-                 "on line 143, column 32 to 33"),
+                 "on line 168, column 32 to 33"),
                  axis = $._0,
                  parity = $._1;
                  var c = A2(getCoordinate,
                  axis,
                  mv);
                  return _U.cmp(c,
-                 _v83._0) < 0 || _U.cmp(c,
-                 _v83._1) > 0 ? v : mv;
+                 _v92._0) < 0 || _U.cmp(c,
+                 _v92._1) > 0 ? v : mv;
               }();}
          _E.Case($moduleName,
-         "between lines 143 and 146");
+         "between lines 168 and 171");
       }();
    });
    var movePlayer = F2(function (m,
@@ -691,21 +773,19 @@ Elm.Main.make = function (_elm) {
          g.board) ? _U.replace([["plr"
                                 ,{_: {},pos: pos$}]],
          g) : function () {
-            var movingToLaser = List.any(Basics.id)(A2(List.map,
+            var movingToLaser = A2(existsAtPosition,
+            pos$,
+            g.board.lasers);
+            var ls = A3(mapAtPosition,
+            pos$,
             function (e) {
-               return _U.eq(e.pos,pos$);
-            },
-            g.board.lasers));
-            var ls = A2(List.map,
-            function (e) {
-               return _U.eq(e.pos,
-               pos$) ? _U.replace([["$switch"
-                                   ,swap(e.$switch)]],
-               e) : e;
+               return _U.replace([["$switch"
+                                  ,swap(e.$switch)]],
+               e);
             },
             g.board.lasers);
             return movingToLaser ? _U.replace([["board"
-                                               ,A2(activateLaserAt,
+                                               ,A2(toggleLaserAt,
                                                pos$,
                                                g.board)]],
             g) : g;
@@ -723,43 +803,43 @@ Elm.Main.make = function (_elm) {
       }();
    };
    var getPosCoordinate = F2(function (a,
-   _v89) {
+   _v98) {
       return function () {
          return A2(getCoordinate,
          a,
-         _v89.pos);
+         _v98.pos);
       }();
    });
-   var iterAxes = F4(function (_v91,
+   var iterAxes = F4(function (_v100,
    is,
    f,
    ps) {
       return function () {
-         switch (_v91.ctor)
+         switch (_v100.ctor)
          {case "_Tuple2":
             return function () {
                  switch (is.ctor)
                  {case "::": switch (is._0.ctor)
                       {case "_Tuple2":
                          return function () {
-                              var _v100 = A2(List.filter,
+                              var _v109 = A2(List.filter,
                               function (p) {
                                  return _U.eq(A2(getPosCoordinate,
-                                 _v91._0,
+                                 _v100._0,
                                  p),
                                  is._0._0) && _U.eq(A2(getPosCoordinate,
-                                 _v91._1,
+                                 _v100._1,
                                  p),
                                  is._0._1);
                               },
                               ps);
-                              switch (_v100.ctor)
+                              switch (_v109.ctor)
                               {case "::": return {ctor: "::"
-                                                 ,_0: Maybe.Just(f(_v100._0))
+                                                 ,_0: Maybe.Just(f(_v109._0))
                                                  ,_1: A4(iterAxes,
                                                  {ctor: "_Tuple2"
-                                                 ,_0: _v91._0
-                                                 ,_1: _v91._1},
+                                                 ,_0: _v100._0
+                                                 ,_1: _v100._1},
                                                  is._1,
                                                  f,
                                                  ps)};
@@ -767,57 +847,57 @@ Elm.Main.make = function (_elm) {
                                                    ,_0: Maybe.Nothing
                                                    ,_1: A4(iterAxes,
                                                    {ctor: "_Tuple2"
-                                                   ,_0: _v91._0
-                                                   ,_1: _v91._1},
+                                                   ,_0: _v100._0
+                                                   ,_1: _v100._1},
                                                    is._1,
                                                    f,
                                                    ps)};}
                               _E.Case($moduleName,
-                              "between lines 208 and 211");
+                              "between lines 233 and 236");
                            }();}
                       break;
                     case "[]":
                     return _J.toList([]);}
                  _E.Case($moduleName,
-                 "between lines 206 and 211");
+                 "between lines 231 and 236");
               }();}
          _E.Case($moduleName,
-         "between lines 206 and 211");
+         "between lines 231 and 236");
       }();
    });
    var inSlice = F3(function (v,
-   _v103,
+   _v112,
    p) {
       return function () {
-         switch (_v103.ctor)
+         switch (_v112.ctor)
          {case "_Tuple2":
             return _U.eq(A2(getCoordinate,
-              _v103._0,
+              _v112._0,
               v),
               A2(getPosCoordinate,
-              _v103._0,
+              _v112._0,
               p)) && _U.eq(A2(getCoordinate,
-              _v103._1,
+              _v112._1,
               v),
               A2(getPosCoordinate,
-              _v103._1,
+              _v112._1,
               p));}
          _E.Case($moduleName,
-         "between lines 200 and 201");
+         "between lines 225 and 226");
       }();
    });
-   var notAxes = function (_v107) {
+   var notAxes = function (_v116) {
       return function () {
-         switch (_v107.ctor)
+         switch (_v116.ctor)
          {case "_Tuple2":
             return A2(List.filter,
               function (x) {
                  return !_U.eq(x,
-                 _v107._0) && !_U.eq(x,_v107._1);
+                 _v116._0) && !_U.eq(x,_v116._1);
               },
               _J.toList([X,Y,Z,W]));}
          _E.Case($moduleName,
-         "on line 204, column 18 to 59");
+         "on line 229, column 18 to 59");
       }();
    };
    var testBoard = function () {
@@ -836,7 +916,7 @@ Elm.Main.make = function (_elm) {
       var rs = _J.toList([{_: {}
                           ,$switch: Off
                           ,pos: {ctor: "_Tuple4"
-                                ,_0: 1
+                                ,_0: 3
                                 ,_1: 1
                                 ,_2: 0
                                 ,_3: 0}}]);
@@ -866,24 +946,24 @@ Elm.Main.make = function (_elm) {
                           ,{ctor: "_Tuple2"
                            ,_0: Z
                            ,_1: W}]);
-   var showLaser = function (_v111) {
+   var showLaser = function (_v120) {
       return function () {
          return colorChrElem(Color.red)(function () {
-            var _v113 = _v111.$switch;
-            switch (_v113.ctor)
+            var _v122 = _v120.$switch;
+            switch (_v122.ctor)
             {case "Off": return _U.chr("?");
                case "On": return function () {
-                    var _v114 = _v111.dir;
-                    switch (_v114.ctor)
+                    var _v123 = _v120.dir;
+                    switch (_v123.ctor)
                     {case "W": return _U.chr(";");
                        case "X": return _U.chr(":");
                        case "Y": return _U.chr("=");
                        case "Z": return _U.chr(".");}
                     _E.Case($moduleName,
-                    "between lines 300 and 305");
+                    "between lines 325 and 330");
                  }();}
             _E.Case($moduleName,
-            "between lines 299 and 305");
+            "between lines 324 and 330");
          }());
       }();
    };
@@ -911,14 +991,14 @@ Elm.Main.make = function (_elm) {
               25,
               _U.chr("Z"));}
          _E.Case($moduleName,
-         "between lines 311 and 315");
+         "between lines 336 and 340");
       }();
    };
    var showSlice = F3(function (p,
-   _v116,
+   _v125,
    b) {
       return function () {
-         switch (_v116.ctor)
+         switch (_v125.ctor)
          {case "_Tuple2":
             return function () {
                  var $ = b.minmax,
@@ -949,16 +1029,16 @@ Elm.Main.make = function (_elm) {
                        });
                        return A4(iterAxes,
                        {ctor: "_Tuple2"
-                       ,_0: _v116._0
-                       ,_1: _v116._1},
+                       ,_0: _v125._0
+                       ,_1: _v125._1},
                        coordPairs,
                        f,
                        xs);
                     }();
                  });
                  var $ = List.sortWith(axisOrder)(notAxes({ctor: "_Tuple2"
-                                                          ,_0: _v116._0
-                                                          ,_1: _v116._1}));
+                                                          ,_0: _v125._0
+                                                          ,_1: _v125._1}));
                  var a1$ = function () {
                     switch ($.ctor)
                     {case "::": switch ($._1.ctor)
@@ -968,7 +1048,7 @@ Elm.Main.make = function (_elm) {
                               break;}
                          break;}
                     _E.Case($moduleName,
-                    "on line 220, column 26 to 63");
+                    "on line 245, column 26 to 63");
                  }();
                  var a2$ = function () {
                     switch ($.ctor)
@@ -979,7 +1059,7 @@ Elm.Main.make = function (_elm) {
                               break;}
                          break;}
                     _E.Case($moduleName,
-                    "on line 220, column 26 to 63");
+                    "on line 245, column 26 to 63");
                  }();
                  var fbP = function ($) {
                     return List.sortBy(function (_) {
@@ -1015,11 +1095,11 @@ Elm.Main.make = function (_elm) {
                  return Graphics.Element.layers(_J.toList([A2(cr,
                                                           Graphics.Element.midTop,
                                                           boardMap)
-                                                          ,cr(Graphics.Element.midBottom)(showAxis(_v116._0))
-                                                          ,cr(Graphics.Element.midLeft)(showAxis(_v116._1))]));
+                                                          ,cr(Graphics.Element.midBottom)(showAxis(_v125._0))
+                                                          ,cr(Graphics.Element.midLeft)(showAxis(_v125._1))]));
               }();}
          _E.Case($moduleName,
-         "between lines 220 and 243");
+         "between lines 245 and 268");
       }();
    });
    var showGame = function (game) {
@@ -1034,22 +1114,22 @@ Elm.Main.make = function (_elm) {
          game.board));
       })))));
    };
-   var display = F2(function (_v130,
+   var display = F2(function (_v139,
    g) {
       return function () {
-         switch (_v130.ctor)
+         switch (_v139.ctor)
          {case "_Tuple2":
             return A2(centeredWithBg,
               {ctor: "_Tuple2"
-              ,_0: _v130._0
-              ,_1: _v130._1},
+              ,_0: _v139._0
+              ,_1: _v139._1},
               showGame(g));}
          _E.Case($moduleName,
-         "on line 365, column 20 to 53");
+         "on line 390, column 20 to 53");
       }();
    });
    var main = function () {
-      var testing = true;
+      var testing = false;
       return function () {
          switch (testing)
          {case false:
@@ -1063,17 +1143,9 @@ Elm.Main.make = function (_elm) {
               Window.dimensions,
               game);}
          _E.Case($moduleName,
-         "between lines 360 and 362");
+         "between lines 385 and 387");
       }();
    }();
-   var testSignal = Text.asText(A3(addLaserAt,
-   {ctor: "_Tuple4"
-   ,_0: 1
-   ,_1: 0
-   ,_2: 0
-   ,_3: 0},
-   X,
-   testBoard));
    _elm.Main.values = {_op: _op
                       ,eventSignal: eventSignal
                       ,interpretKey: interpretKey
@@ -1082,8 +1154,13 @@ Elm.Main.make = function (_elm) {
                       ,movePlayer: movePlayer
                       ,modifyFloorAt: modifyFloorAt
                       ,elem: elem
-                      ,activateLaserAt: activateLaserAt
-                      ,addLaserAt: addLaserAt
+                      ,remove: remove
+                      ,posEq: posEq
+                      ,existsAtPosition: existsAtPosition
+                      ,mapAtPosition: mapAtPosition
+                      ,toggleLaserAt: toggleLaserAt
+                      ,swapLaser: swapLaser
+                      ,toggleReceptorAt: toggleReceptorAt
                       ,lineOfSight: lineOfSight
                       ,sightFan: sightFan
                       ,pred: pred
