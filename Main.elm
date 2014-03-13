@@ -20,8 +20,7 @@ type Receptor = Positioned ( Switchable {} )
 type Laser    = Positioned ( Switchable { dir : Axis } )
 type Floor    = Positioned { rays : [Axis] }
 
-type Board = { prisms    : [Prism]
-             , receptors : [Receptor]
+type Board = { receptors : [Receptor]
              , lasers    : [Laser]
              , tiles     : [Floor]    -- laser axes
              , minmax    : (Int, Int) -- min/max XYZW values
@@ -64,20 +63,13 @@ swap s = if s == On then Off else On
 movePlayer : Movement -> Game -> Game
 movePlayer m g = 
   let pos'   = boundedMoveVect (g.board.minmax) m (g.plr.pos)
-      board' = g.board
-      ps     = map (\e -> { e | onAxes <- [] } ) g.board.prisms
-      bd'    = {board' | prisms <- ps}
-      g'     = {g | board <- bd'}
-      movingToPrism = existsAtPosition pos' g'.board.prisms
-  in if canMoveTo pos' g'.board 
-     then if movingToPrism 
-          then { g' | board <- togglePrismAt pos' X g'.board} 
-          else { g' | plr <- { pos = pos'} }
-     else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g'.board.lasers
-              movingToLaser = existsAtPosition pos' g'.board.lasers
+  in if canMoveTo pos' g.board 
+     then { g | plr <- { pos = pos'} }
+     else let ls = mapAtPosition pos' (\e -> {e | switch <- swap e.switch }) g.board.lasers
+              movingToLaser = existsAtPosition pos' g.board.lasers
           in if movingToLaser 
-             then { g' | board <- toggleLaserAt pos' g'.board }
-             else g'
+             then { g | board <- toggleLaserAt pos' g.board }
+             else g
 
 -- Will apply function to empty floor if one does not exist.
 modifyFloorAt : Vector4 -> (Floor -> Floor) -> Board -> Board
@@ -106,18 +98,6 @@ existsAtPosition v = any id . map (\e -> e.pos == v)
 
 mapAtPosition : Vector4 -> (Positioned a -> Positioned a) -> [Positioned a] -> [Positioned a]
 mapAtPosition v f = map (\e -> if v `posEq` e then f e else e)
-
-togglePrismAt : Vector4 -> Axis -> Board -> Board
-togglePrismAt v a b =
-  let prism   = head <| filter (posEq v) b.prisms
-      hasAxis = a `elem` prism.onAxes
-  in if hasAxis 
-     then b
-     else let ps = mapAtPosition v ( \e -> {e | switch <- swap e.switch, onAxes <- a :: prism.onAxes} ) b.prisms
-              (mini, maxi) = b.minmax
-              floors = case prism.orientation of
-                _   -> lineOfSight (getCoordinate a prism.pos, maxi) v prism.dir
-          in swapLasers prism.switch floors prism.dir {b | prisms <- ps}
 
 toggleLaserAt : Vector4 -> Board -> Board
 toggleLaserAt v b = 
@@ -273,7 +253,7 @@ showSlice p (a1, a2) b =
       len              = maxi - mini + 1
       size             = len * 40 + 80 -- width and height
       fbP              = sortBy .pos . filter (inSlice p.pos (a1', a2'))
-      (ps, rs, ls, ts) = (fbP b.prisms, fbP b.receptors, fbP b.lasers, fbP b.tiles)
+      (rs, ls, ts) = (fbP b.receptors, fbP b.lasers, fbP b.tiles)
       getAll f xs = 
         let coordPairs = [mini..maxi] `lbind` \x -> [mini..maxi] `lbind` \y -> lreturn (y, x)
         in iterAxes (a1, a2) coordPairs f xs
@@ -286,7 +266,6 @@ showSlice p (a1, a2) b =
            [ getAll showPlayer   [p]
            , getAll showLaser    ls
            , getAll showReceptor rs
-           , getAll showPrism    ps
            , getAll showFloor    ts ]
       cr pos e = container size size pos e
   in layers [ cr midTop boardMap
@@ -307,12 +286,11 @@ showGame game = flow down
 
 {- Begin Debug -}
 testBoard =
-  let ps = [ { switch = Off, pos = (2, 1, 0, 0), onAxes = [], dir = X, orientation = Neg } ]
-      rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
+  let rs = [ { switch = Off, pos = (3, 1, 0, 0) } ]
       ls = [ { switch = Off, pos = (0, 1, 0, 0), dir = X } ]
       ts = [ ]
       mm = (0, 3)
-  in Board ps rs ls ts mm
+  in Board rs ls ts mm
 
 testGame = Game {pos = (0,0,0,0)} testBoard False
 
@@ -335,11 +313,6 @@ planes =
 {- End Debug -}
 
 {- Begin Show -}
-showPrism : Prism -> Element
-showPrism {switch} = colorChrElem green <| case switch of
-  On  -> '%'
-  Off -> '*'
-
 showReceptor : Receptor -> Element
 showReceptor {switch} = colorChrElem blue <| case switch of
   On  -> '$'
