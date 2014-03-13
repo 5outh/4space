@@ -96,22 +96,28 @@ Elm.Main.make = function (_elm) {
          "between lines 375 and 377");
       }();
    });
-   var showFloor = function (flr) {
+   var showFloor = F2(function (s,
+   flr) {
       return function () {
          var _v12 = flr.rays;
          switch (_v12.ctor)
          {case "[]":
-            return A2(colorChrElem,
+            return A3(colorSizeChrElem,
               Color.white,
+              s,
               _U.chr("·"));}
-         return A2(colorChrElem,
+         return A3(colorSizeChrElem,
          Color.red,
+         s,
          _U.chr("·"));
       }();
+   });
+   var showPlayer = function (s) {
+      return Basics.always(A3(colorSizeChrElem,
+      Color.darkOrange,
+      s,
+      _U.chr("@")));
    };
-   var showPlayer = Basics.always(A2(colorChrElem,
-   Color.darkOrange,
-   _U.chr("@")));
    var lbind = Basics.flip(List.concatMap);
    var lreturn = function (x) {
       return _J.toList([x]);
@@ -496,9 +502,12 @@ Elm.Main.make = function (_elm) {
          return A2(go,vs,b);
       }();
    });
-   var showReceptor = function (_v57) {
+   var showReceptor = F2(function (s,
+   _v57) {
       return function () {
-         return colorChrElem(Color.blue)(function () {
+         return A2(colorSizeChrElem,
+         Color.blue,
+         s)(function () {
             var _v59 = _v57.$switch;
             switch (_v59.ctor)
             {case "Off": return _U.chr("_");
@@ -507,7 +516,7 @@ Elm.Main.make = function (_elm) {
             "between lines 317 and 319");
          }());
       }();
-   };
+   });
    var W = {ctor: "W"};
    var Z = {ctor: "Z"};
    var Y = {ctor: "Y"};
@@ -938,9 +947,12 @@ Elm.Main.make = function (_elm) {
                           ,{ctor: "_Tuple2"
                            ,_0: Z
                            ,_1: W}]);
-   var showLaser = function (_v114) {
+   var showLaser = F2(function (s,
+   _v114) {
       return function () {
-         return colorChrElem(Color.red)(function () {
+         return A2(colorSizeChrElem,
+         Color.red,
+         s)(function () {
             var _v116 = _v114.$switch;
             switch (_v116.ctor)
             {case "Off": return _U.chr("?");
@@ -958,7 +970,7 @@ Elm.Main.make = function (_elm) {
             "between lines 323 and 329");
          }());
       }();
-   };
+   });
    var showAxis = function (a) {
       return function () {
          switch (a.ctor)
@@ -993,18 +1005,19 @@ Elm.Main.make = function (_elm) {
          switch (_v119.ctor)
          {case "_Tuple2":
             return function () {
+                 var cr = F2(function (pos,
+                 e) {
+                    return A4(Graphics.Element.container,
+                    240,
+                    240,
+                    pos,
+                    e);
+                 });
                  var $ = b.minmax,
                  mini = $._0,
                  maxi = $._1;
                  var len = maxi - mini + 1;
-                 var size = len * 40 + 80;
-                 var cr = F2(function (pos,e) {
-                    return A4(Graphics.Element.container,
-                    size,
-                    size,
-                    pos,
-                    e);
-                 });
+                 var boxSize = 160 / len;
                  var getAll = F2(function (f,
                  xs) {
                     return function () {
@@ -1070,17 +1083,24 @@ Elm.Main.make = function (_elm) {
                  ls = $._1,
                  ts = $._2;
                  var boardMap = Graphics.Element.flow(Graphics.Element.down)(List.map(Graphics.Element.flow(Graphics.Element.right))(groupOn(len)(List.map(A2(Maybe.maybe,
-                 A2(colorChrElem,
+                 A3(colorSizeChrElem,
                  Color.white,
+                 boxSize,
                  _U.chr("·")),
                  Basics.id))(A2(List.foldr1,
                  mergeJusts,
                  _J.toList([A2(getAll,
-                           showPlayer,
+                           showPlayer(boxSize),
                            _J.toList([p]))
-                           ,A2(getAll,showLaser,ls)
-                           ,A2(getAll,showReceptor,rs)
-                           ,A2(getAll,showFloor,ts)]))))));
+                           ,A2(getAll,
+                           showLaser(boxSize),
+                           ls)
+                           ,A2(getAll,
+                           showReceptor(boxSize),
+                           rs)
+                           ,A2(getAll,
+                           showFloor(boxSize),
+                           ts)]))))));
                  return Graphics.Element.layers(_J.toList([A2(cr,
                                                           Graphics.Element.midTop,
                                                           boardMap)

@@ -251,7 +251,7 @@ showSlice p (a1, a2) b =
   let [a1', a2']       = sortWith axisOrder <| notAxes (a1, a2)
       (mini, maxi)     = b.minmax
       len              = maxi - mini + 1
-      size             = len * 40 + 80 -- width and height
+      boxSize          = 160 / len
       fbP              = sortBy .pos . filter (inSlice p.pos (a1', a2'))
       (rs, ls, ts) = (fbP b.receptors, fbP b.lasers, fbP b.tiles)
       getAll f xs = 
@@ -261,13 +261,13 @@ showSlice p (a1, a2) b =
            flow down
         <| map (flow right) 
         <| groupOn len
-        <| map (maybe (colorChrElem white '·') id) 
+        <| map (maybe (colorSizeChrElem white boxSize '·') id) 
         <| foldr1 mergeJusts 
-           [ getAll showPlayer   [p]
-           , getAll showLaser    ls
-           , getAll showReceptor rs
-           , getAll showFloor    ts ]
-      cr pos e = container size size pos e
+           [ getAll (showPlayer   boxSize) [p]
+           , getAll (showLaser    boxSize) ls
+           , getAll (showReceptor boxSize) rs
+           , getAll (showFloor    boxSize) ts ]
+      cr pos e = container 240 240 pos e
   in layers [ cr midTop boardMap
             , cr midBottom <| showAxis a1
             , cr midLeft   <| showAxis a2 ]
@@ -313,14 +313,14 @@ planes =
 {- End Debug -}
 
 {- Begin Show -}
-showReceptor : Receptor -> Element
-showReceptor {switch} = colorChrElem blue <| case switch of
+showReceptor : Float -> Receptor -> Element
+showReceptor s {switch} = colorSizeChrElem blue s <| case switch of
   On  -> '$'
   Off -> '_'
 
 -- TODO: Test this out and see if it makes sense.
-showLaser : Laser -> Element
-showLaser {dir, switch} = colorChrElem red <| case switch of 
+showLaser : Float -> Laser -> Element
+showLaser s {dir, switch} = colorSizeChrElem red s <| case switch of 
   On ->  case dir of
     X -> ':'
     Y -> '='
@@ -328,8 +328,8 @@ showLaser {dir, switch} = colorChrElem red <| case switch of
     W -> ';'
   Off -> '?'
 
-showPlayer : Positioned {} -> Element
-showPlayer = always <| colorChrElem darkOrange '@'
+showPlayer : Float -> Positioned {} -> Element
+showPlayer s = always <| colorSizeChrElem darkOrange s '@'
 
 showAxis : Axis -> Element
 showAxis a =  case a of
@@ -339,10 +339,10 @@ showAxis a =  case a of
   W -> colorSizeChrElem purple 25 'W'
 
 -- TODO: showFloor (will depend on player view)
-showFloor : Floor -> Element
-showFloor flr = case flr.rays of
-  []          -> colorChrElem white '·'
-  _           -> colorChrElem red '·'
+showFloor : Float -> Floor -> Element
+showFloor s flr = case flr.rays of
+  []          -> colorSizeChrElem white s '·'
+  _           -> colorSizeChrElem red   s '·'
 {- End Show -}
 
 {- Begin Helpers -}
